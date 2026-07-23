@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificador de Turnos</title>
+
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <header>
+
+        <h1>📅 Planificador de Turnos</h1>
+
+        <div class="barra">
+
+            <button id="btnPDFMes" class="btn-pdf">
+                📄 PDF Mes
+            </button>
+
+            <button id="btnActualizar" class="btn-consultar">
+                🔄 Actualizar turnos
+            </button>
+
+            <button id="btnAdministrador" class="btn-admin">
+                🔒 Administrador
+            </button>
+
+            <label for="meses">Mes:</label>
+
+            <select id="meses">
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+            </select>
+
+            <label for="buscar">Buscar:</label>
+
+            <input
+                type="text"
+                id="buscar"
+                placeholder="Empleado o varios separados por coma...">
+
+            <label for="diaConsulta">Día:</label>
+
+            <select id="diaConsulta"></select>
+
+            <button id="btnConsultar" class="btn-consultar">
+                🔍 Consultar personal
+            </button>
+
+            <button id="btnPDF" class="btn-pdf">
+                📄 PDF Día
+            </button>
+
+        </div>
+
+    </header>
+
+    <div id="mensajeActualizacion"></div>
+
+    <div id="resultadoDia"></div>
+
+    <div class="tabla">
+        <table>
+            <thead id="thead"></thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<footer>
+    <a href="politica-privacidad.html">
+        Política de Privacidad
+    </a>
+</footer>
+
+<script src="libs/xlsx.full.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase.js"></script>
+
+<script src="js/app.js"></script>
+<script src="js/render.js"></script>
+<script src="js/excel.js"></script>
+
+<script src="js/pdf.js"></script>
+
+<script>
+document.getElementById("btnAdministrador").addEventListener("click", () => {
+    window.location.href = "admin.html";
+});
+</script>
+
+</body>
+</html>
