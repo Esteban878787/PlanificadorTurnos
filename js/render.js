@@ -1,5 +1,26 @@
 "use strict";
 
+function obtenerEmpleadosFiltrados() {
+
+    if (!filtroEmpleado || filtroEmpleado.length === 0) {
+        return empleados;
+    }
+
+    return empleados.filter(emp => {
+
+        const nombreEmpleado =
+            String(emp.nombre)
+                .trim()
+                .toUpperCase();
+
+        return filtroEmpleado.some(nombreBuscado =>
+            nombreEmpleado.includes(
+                nombreBuscado.trim().toUpperCase()
+            )
+        );
+
+    });
+}
 
 // =======================================
 // PINTAR TABLA COMPLETA
@@ -162,7 +183,9 @@ function crearFilas(diasMes) {
 
 
 
-    empleados.forEach(emp => {
+   const empleadosFiltrados = obtenerEmpleadosFiltrados();
+
+empleadosFiltrados.forEach(emp => {
 
 
 
@@ -265,7 +288,7 @@ function crearFilas(diasMes) {
 
 
 
-    crearFilaTotales(diasMes);
+   crearFilaTotales(diasMes, empleadosFiltrados);
 
 
 }
@@ -280,7 +303,7 @@ function crearFilas(diasMes) {
 // TOTALES
 // =======================================
 
-function crearFilaTotales(diasMes) {
+function crearFilaTotales(diasMes, empleadosFiltrados) {
 
 
     const tbody = document.getElementById("tbody");
@@ -331,7 +354,7 @@ function crearFilaTotales(diasMes) {
 
 
 
-            empleados.forEach(emp => {
+           empleadosFiltrados.forEach(emp => {
 
 
 
