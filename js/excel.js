@@ -87,8 +87,8 @@ async function cargarExcelServidor() {
 
 function procesarWorkbook(workbook) {
 
-
-    const hoja = workbook.Sheets["CUADRANTE"];
+    const hoja =
+        workbook.Sheets["CUADRANTE"];
 
 
     if (!hoja) {
@@ -100,35 +100,263 @@ function procesarWorkbook(workbook) {
     }
 
 
-
     leerDias(hoja);
-
 
     leerEmpleados(hoja);
 
+    // =======================================
+    // LEER FESTIVOS
+    // =======================================
+leerFestivos(workbook);
 
+console.log("=================================");
+console.log("🔴 FESTIVOS ANTES DE RENDERIZAR:");
+console.table(festivos);
+console.log("=================================");
 
-    actualizarSelectorMeses();
-
+actualizarSelectorMeses();
 
 
     console.log("DIAS:", dias);
 
     console.log("EMPLEADOS:", empleados);
 
+    console.log("FESTIVOS:", festivos);
 
 
-renderTabla();
+    renderTabla();
 
-cargarDiasConsulta();
+    cargarDiasConsulta();
 
-cargarRangoDias();
+    cargarRangoDias();
 
-seleccionarDiaActualODisponible();
-
+    seleccionarDiaActualODisponible();
 
 }
 
+// =======================================
+// LEER FESTIVOS
+// HOJA "Festivos"
+// COLUMNA B
+// SOLO AÑO 2026
+// =======================================
+
+function leerFestivos(workbook) {
+
+    festivos = [];
+
+    const hoja =
+    workbook.Sheets["FESTIVOS"];
+
+    if (!hoja) {
+        console.error('❌ NO EXISTE LA HOJA "Festivos"');
+        return;
+    }
+
+    console.log("=================================");
+    console.log("🔴 LEYENDO COLUMNA B DE FESTIVOS");
+    console.log("=================================");
+
+    const rango = XLSX.utils.decode_range(hoja["!ref"]);
+
+    // B = columna 1
+    const columnaB = 1;
+
+    for (
+        let fila = rango.s.r;
+        fila <= rango.e.r;
+        fila++
+    ) {
+
+        const direccion = XLSX.utils.encode_cell({
+            r: fila,
+            c: columnaB
+        });
+
+        const celda = hoja[direccion];
+
+        if (!celda) {
+            continue;
+        }
+
+        console.log(
+            "CELDA",
+            direccion,
+            "v=",
+            celda.v,
+            "w=",
+            celda.w,
+            "t=",
+            celda.t
+        );
+
+        let fecha = null;
+
+        // ===================================
+        // 1. FECHA REAL
+        // ===================================
+
+        if (celda.v instanceof Date) {
+
+            fecha = new Date(
+                celda.v.getFullYear(),
+                celda.v.getMonth(),
+                celda.v.getDate()
+            );
+
+        }
+
+        // ===================================
+        // 2. NÚMERO DE EXCEL
+        // ===================================
+
+        else if (typeof celda.v === "number") {
+
+            const f =
+                XLSX.SSF.parse_date_code(celda.v);
+
+            if (f) {
+
+                fecha = new Date(
+                    f.y,
+                    f.m - 1,
+                    f.d
+                );
+
+            }
+
+        }
+
+        // ===================================
+        // 3. TEXTO
+        // ===================================
+
+        else {
+
+            // Primero usamos el valor mostrado por Excel
+            const texto =
+                String(
+                    celda.w ??
+                    celda.v ??
+                    ""
+                ).trim();
+
+            // DD/MM/YYYY
+            let partes =
+                texto.match(
+                    /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
+                );
+
+            if (partes) {
+
+                const dia =
+                    Number(partes[1]);
+
+                const mes =
+                    Number(partes[2]);
+
+                const anio =
+                    Number(partes[3]);
+
+                fecha = new Date(
+                    anio,
+                    mes - 1,
+                    dia
+                );
+
+            }
+
+            // YYYY-MM-DD
+            if (!fecha) {
+
+                partes =
+                    texto.match(
+                        /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/
+                    );
+
+                if (partes) {
+
+                    const anio =
+                        Number(partes[1]);
+
+                    const mes =
+                        Number(partes[2]);
+
+                    const dia =
+                        Number(partes[3]);
+
+                    fecha = new Date(
+                        anio,
+                        mes - 1,
+                        dia
+                    );
+
+                }
+
+            }
+
+        }
+
+        // ===================================
+        // VALIDAR
+        // ===================================
+
+        if (
+            !fecha ||
+            isNaN(fecha.getTime())
+        ) {
+            continue;
+        }
+
+        // ===================================
+        // SOLO 2026
+        // ===================================
+
+        if (
+            fecha.getFullYear() !== 2026
+        ) {
+            continue;
+        }
+
+        // ===================================
+        // GUARDAR
+        // ===================================
+
+        festivos.push({
+
+            dia: fecha.getDate(),
+
+            mes: fecha.getMonth() + 1,
+
+            anio: fecha.getFullYear(),
+
+            fecha: fecha
+
+        });
+
+    }
+
+    // ===================================
+    // QUITAR DUPLICADOS
+    // ===================================
+
+    festivos = festivos.filter(
+        (festivo, indice, array) =>
+            indice === array.findIndex(
+                otro =>
+                    otro.dia === festivo.dia &&
+                    otro.mes === festivo.mes &&
+                    otro.anio === festivo.anio
+            )
+    );
+
+    console.log(
+        "🔴🔴🔴 FESTIVOS 2026:",
+        festivos
+    );
+
+    console.table(festivos);
+}
 
 
 
