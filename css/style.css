@@ -1091,3 +1091,27 @@ footer a:hover {
 
     color: #3f291d !important;
 }
+/* =======================================
+   DÍAS FESTIVOS
+   ======================================= */
+
+/* Día festivo en la cabecera */
+thead th.dia-festivo {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    border-color: #b91c1c !important;
+}
+
+/* Número del día festivo */
+thead tr:nth-child(2) th.dia-festivo {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+}
+
+/* Si algún día festivo se aplica a una celda de la tabla */
+td.dia-festivo {
+    background: #ffe5e5 !important;
+    color: #dc2626 !important;
+    font-weight: 700 !important;
+}
