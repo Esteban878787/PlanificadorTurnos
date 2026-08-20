@@ -118,15 +118,13 @@ function procesarWorkbook(workbook) {
 
 
 
-    renderTabla();
+renderTabla();
 
+cargarDiasConsulta();
 
+cargarRangoDias();
 
-    if (typeof cargarDiasConsulta === "function") {
-
-        cargarDiasConsulta();
-
-    }
+seleccionarDiaActualODisponible();
 
 
 }
@@ -220,23 +218,36 @@ function actualizarSelectorMeses() {
 
 
 
-    if (obtenerMesesDisponibles().includes(mesActual)) {
+if (obtenerMesesDisponibles().includes(mesActual)) {
+
+    select.value = mesActual;
+    mesSeleccionado = mesActual;
+
+} else if (select.options.length > 0) {
+
+    select.value = select.options[0].value;
+    mesSeleccionado = Number(select.value);
+
+}
 
 
-        select.value = mesActual;
+select.onchange = function() {
 
+    mesSeleccionado = Number(this.value);
 
+    renderTabla();
+
+    if (typeof cargarDiasConsulta === "function") {
+        cargarDiasConsulta();
     }
 
+    const resultado = document.getElementById("resultadoDia");
 
+    if (resultado) {
+        resultado.innerHTML = "";
+    }
 
-    select.onchange = function() {
-
-
-        renderTabla();
-
-
-    };
+};
 
 
 
