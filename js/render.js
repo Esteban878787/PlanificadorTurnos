@@ -691,17 +691,15 @@ function crearFilaTotales(
             });
 
 
-            const td =
-                document.createElement("td");
+const td =
+    document.createElement("td");
 
-            td.textContent =
-                contador;
+td.textContent =
+    contador;
 
-            td.style.fontWeight =
-                "bold";
+td.classList.add("total-" + turnoBuscado);
 
-
-            tr.appendChild(td);
+tr.appendChild(td);
 
         });
 
