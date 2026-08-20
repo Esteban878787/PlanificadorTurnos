@@ -19,17 +19,20 @@
 
         <div class="barra">
 
-            <button id="btnPDFMes" class="btn-pdf">
-                📄 PDF Mes
-            </button>
+           <button id="btnPDFMes" class="btn-pdf">
+    PDF · Mes
+</button>
+<button id="btnPDF" class="btn-pdf">
+    PDF · Día
+</button>
+
+
 
             <button id="btnActualizar" class="btn-consultar">
                 🔄 Actualizar turnos
             </button>
 
-            <button id="btnAdministrador" class="btn-admin">
-                🔒 Administrador
-            </button>
+
 
             <label for="meses">Mes:</label>
 
@@ -55,17 +58,38 @@
                 id="buscar"
                 placeholder="Empleado o varios separados por coma...">
 
-            <label for="diaConsulta">Día:</label>
+<label for="diaConsulta">Día:</label>
 
-            <select id="diaConsulta"></select>
+<select id="diaConsulta"></select>
+<div class="rango-filtro">
 
-            <button id="btnConsultar" class="btn-consultar">
-                🔍 Consultar personal
-            </button>
+    <label for="diaDesde">Desde:</label>
+    <select id="diaDesde"></select>
 
-            <button id="btnPDF" class="btn-pdf">
-                📄 PDF Día
-            </button>
+    <label for="diaHasta">Hasta:</label>
+    <select id="diaHasta"></select>
+
+</div>
+
+
+
+
+
+</div>
+
+<button id="btnConsultar" class="btn-consultar">
+    🔍 Consultar personal
+</button>
+
+<button
+    id="btnCerrarConsulta"
+    class="btn-cerrar-consulta">
+    ✖ Quitar consulta
+</button>
+
+
+
+
 
         </div>
 
@@ -75,6 +99,35 @@
 
     <div id="resultadoDia"></div>
 
+
+<button
+    id="btnCerrarConsulta"
+    class="btn-cerrar-consulta">
+    ✖ Cerrar consulta
+</button>
+
+<div class="filtros-cuadrante">
+
+    <span class="titulo-filtro">
+        Filtrar cuadrante:
+    </span>
+
+    <label>
+        <input type="checkbox" id="filtroManana" checked>
+        ☀️ Mañana
+    </label>
+
+    <label>
+        <input type="checkbox" id="filtroTarde" checked>
+        🌆 Tarde
+    </label>
+
+    <label>
+        <input type="checkbox" id="filtroNoche" checked>
+        🌙 Noche
+    </label>
+
+</div>
     <div class="tabla">
         <table>
             <thead id="thead"></thead>
@@ -104,11 +157,7 @@
 
 <script src="js/pdf.js"></script>
 
-<script>
-document.getElementById("btnAdministrador").addEventListener("click", () => {
-    window.location.href = "admin.html";
-});
-</script>
+
 
 </body>
 </html>
