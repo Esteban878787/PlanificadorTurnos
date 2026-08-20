@@ -1036,3 +1036,58 @@ footer a:hover {
 .tabla {
     animation: aparecer .25s ease;
 }
+/* =========================================================
+   FILAS DE TOTALES
+   ========================================================= */
+
+.fila-total td {
+    font-weight: 700;
+
+    height: 36px;
+
+    border-top: 2px solid #cbd5e1;
+}
+
+
+/* Nombre del total */
+
+.fila-total td:first-child {
+    background: #f1f5f9;
+
+    color: #334155;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   TOTAL MAÑANA
+   ========================================================= */
+
+.total-M {
+    background: #8fc4ee !important;
+
+    color: #17324d !important;
+}
+
+
+/* =========================================================
+   TOTAL TARDE
+   ========================================================= */
+
+.total-T {
+    background: #a6d681 !important;
+
+    color: #244018 !important;
+}
+
+
+/* =========================================================
+   TOTAL NOCHE
+   ========================================================= */
+
+.total-N {
+    background: #b08a70 !important;
+
+    color: #3f291d !important;
+}
