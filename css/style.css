@@ -1115,3 +1115,334 @@ td.dia-festivo {
     color: #dc2626 !important;
     font-weight: 700 !important;
 }
+/* ==========================================
+   AVISO FALTA DE PERSONAL
+   ========================================== */
+
+#avisoPersonal {
+
+    position: fixed;
+
+    top: 20px;
+    right: 15px;
+
+    width: 330px;
+    max-width: calc(100vw - 30px);
+
+    box-sizing: border-box;
+
+    z-index: 99999;
+
+    font-family: Arial, sans-serif;
+}
+
+
+/* ==========================================
+   VENTANA
+   ========================================== */
+
+.ventana-aviso-personal {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+
+    border: 2px solid #e74c3c;
+
+    border-radius: 10px;
+
+    padding: 10px;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+
+/* ==========================================
+   CERRAR VENTANA
+   ========================================== */
+
+#avisoPersonal.cerrado
+.ventana-aviso-personal {
+
+    display: none;
+}
+
+
+/* ==========================================
+   BOTÓN PARA VOLVER A ABRIR
+   ========================================== */
+
+.boton-abrir-aviso {
+
+    display: none;
+
+    margin-left: auto;
+
+    width: 42px;
+    height: 42px;
+
+    border: 2px solid #e74c3c;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    font-size: 19px;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.20);
+}
+
+
+/* CUANDO ESTÁ CERRADO */
+
+#avisoPersonal.cerrado
+.boton-abrir-aviso {
+
+    display: block;
+}
+
+
+/* ==========================================
+   CABECERA
+   ========================================== */
+
+.cabecera-aviso-personal {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 8px;
+
+    width: 100%;
+}
+
+
+.titulo-aviso-personal {
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    white-space: nowrap;
+}
+
+
+/* ==========================================
+   BOTONES
+   ========================================== */
+
+.botones-aviso {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    flex-shrink: 0;
+}
+
+
+/* ==========================================
+   ACEPTAR
+   ========================================== */
+
+.boton-aviso-personal {
+
+    border: none;
+
+    border-radius: 5px;
+
+    padding: 5px 9px;
+
+    background: #e74c3c;
+
+    color: white;
+
+    font-size: 11px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+
+.boton-aviso-personal:hover {
+
+    background: #c0392b;
+}
+
+
+/* ==========================================
+   CERRAR
+   ========================================== */
+
+.boton-cerrar-aviso {
+
+    width: 25px;
+    height: 25px;
+
+    border: none;
+
+    border-radius: 5px;
+
+    background: #eeeeee;
+
+    color: #555;
+
+    font-size: 18px;
+
+    line-height: 20px;
+
+    cursor: pointer;
+
+    padding: 0;
+}
+
+
+.boton-cerrar-aviso:hover {
+
+    background: #dddddd;
+}
+
+
+/* ==========================================
+   CONTENIDO
+   ========================================== */
+
+.contenido-aviso-personal {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    margin-top: 8px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+
+/* ==========================================
+   CADA FALTA
+   ========================================== */
+
+.item-falta-personal {
+
+    display: grid;
+
+    grid-template-columns:
+        45px
+        minmax(80px, 1fr)
+        45px
+        65px;
+
+    align-items: center;
+
+    gap: 4px;
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 5px 4px;
+
+    background: #fff5f5;
+
+    border-radius: 5px;
+
+    font-size: 12px;
+}
+
+
+/* ==========================================
+   FECHA
+   ========================================== */
+
+.fecha-falta {
+
+    font-weight: bold;
+
+    white-space: nowrap;
+}
+
+
+/* ==========================================
+   TURNO
+   ========================================== */
+
+.turno-falta {
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+}
+
+
+/* ==========================================
+   CANTIDAD
+   ========================================== */
+
+.cantidad-falta {
+
+    text-align: center;
+
+    font-weight: bold;
+
+    white-space: nowrap;
+}
+
+
+/* ==========================================
+   FALTAN
+   ========================================== */
+
+.faltan-falta {
+
+    text-align: right;
+
+    font-weight: bold;
+
+    color: #e74c3c;
+
+    white-space: nowrap;
+}
+
+
+/* ==========================================
+   PARPADEO
+   ========================================== */
+
+#avisoPersonal.parpadeando
+.ventana-aviso-personal {
+
+    animation:
+        parpadeoFaltaPersonal 1s infinite;
+}
+
+
+@keyframes parpadeoFaltaPersonal {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.35;
+    }
+}
