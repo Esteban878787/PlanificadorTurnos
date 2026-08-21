@@ -1536,6 +1536,20 @@ if (faltas.length === 0) {
                 fecha.getMonth() + 1
             ).padStart(2, "0");
 
+
+const letrasDias = [
+    "D",
+    "L",
+    "M",
+    "X",
+    "J",
+    "V",
+    "S"
+];
+
+const nombreDia =
+    letrasDias[fecha.getDay()];
+
         const diferencia =
             falta.minimo -
             falta.cantidad;
@@ -1544,7 +1558,7 @@ if (faltas.length === 0) {
             <div class="item-falta-personal">
 
                 <span class="fecha-falta">
-                    ${diaTexto}/${mesTexto}
+                    ${diaTexto}/${mesTexto} ${nombreDia}
                 </span>
 
                 <span class="turno-falta">
