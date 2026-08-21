@@ -1,6 +1,11 @@
 "use strict";
 
-const URL_EXCEL = "https://dkmvtvikkrhasohnmoxn.supabase.co/storage/v1/object/public/Cuadrantes/INTERCAMBIOS%20Y%20VACACIONES.xlsm";
+// =======================================
+// URL DEL EXCEL
+// =======================================
+
+const URL_EXCEL =
+    "https://dkmvtvikkrhasohnmoxn.supabase.co/storage/v1/object/public/Cuadrantes/INTERCAMBIOS%20Y%20VACACIONES.xlsm";
 
 
 // =======================================
@@ -9,76 +14,231 @@ const URL_EXCEL = "https://dkmvtvikkrhasohnmoxn.supabase.co/storage/v1/object/pu
 
 async function cargarExcelServidor() {
 
+    const selectorAno =
+        document.getElementById("anos");
 
-    // Limpiar datos antiguos antes de cargar el Excel nuevo
+    if (selectorAno && selectorAno.value) {
+        anoSeleccionado = Number(selectorAno.value);
+    }
+
+    console.log("=================================");
+    console.log("📅 CARGANDO AÑO:", anoSeleccionado);
+    console.log("=================================");
 
     dias = [];
-
     empleados = [];
-
+    festivos = [];
 
     try {
 
         const respuesta = await fetch(
-    URL_EXCEL + "?cache=" + new Date().getTime(),
-    {
-            cache: "no-store"
-        });
-
-
-        console.log("Descargando Excel...");
-        console.log("Respuesta:", respuesta.status);
-
-
-        if (!respuesta.ok) {
-
-            throw new Error("No se pudo descargar el Excel.");
-
-        }
-
-
-        const arrayBuffer = await respuesta.arrayBuffer();
-
+            URL_EXCEL + "?cache=" + Date.now(),
+            {
+                cache: "no-store"
+            }
+        );
 
         console.log(
-            "Excel descargado:",
+            "📥 Respuesta Excel:",
+            respuesta.status
+        );
+
+        if (!respuesta.ok) {
+            throw new Error(
+                "No se pudo descargar el Excel."
+            );
+        }
+
+        const arrayBuffer =
+            await respuesta.arrayBuffer();
+
+        console.log(
+            "📦 Tamaño Excel:",
             arrayBuffer.byteLength
         );
 
-
-
-        const workbook = XLSX.read(arrayBuffer, {
-
-            type: "array",
-            cellDates: true,
-            raw: false
-
-        });
-
-
+        // IMPORTANTE:
+        // raw:false permite que SheetJS genere
+        // el valor formateado "w".
+        const workbook =
+            XLSX.read(
+                arrayBuffer,
+                {
+                    type: "array",
+                    cellDates: true,
+                    raw: false
+                }
+            );
 
         console.log(
-            "Workbook cargado:",
+            "📚 HOJAS DEL EXCEL:",
             workbook.SheetNames
         );
 
-
-
         procesarWorkbook(workbook);
 
+    } catch (error) {
 
-
-    } catch(error) {
-
-        console.error(error);
+        console.error(
+            "❌ ERROR CARGANDO EXCEL:",
+            error
+        );
 
         alert(error.message);
-
     }
-
 }
 
 
+// =======================================
+// BUSCAR HOJA DEL CUADRANTE
+// =======================================
+//
+// 2026 -> CUADRANTE
+// 2027 -> CUADRANTE2027
+// 2028 -> CUADRANTE2028
+// etc.
+//
+// Si no existe CUADRANTE2027, intentamos
+// también CUADRANTE como respaldo.
+// =======================================
+
+function buscarHojaCuadrante(workbook, ano) {
+
+    const hojas =
+        workbook.SheetNames || [];
+
+    const anio =
+        Number(ano);
+
+    console.log("=================================");
+    console.log("🔎 BUSCANDO HOJA PARA:", anio);
+    console.log("📚 HOJAS DISPONIBLES:", hojas);
+    console.log("=================================");
+
+
+    // ===================================
+    // NORMALIZAR NOMBRE
+    // ===================================
+
+    function normalizar(nombre) {
+
+        return String(nombre || "")
+            .trim()
+            .toUpperCase()
+            .replace(/\s+/g, "");
+    }
+
+
+    const hojasNormalizadas =
+        hojas.map(nombre => ({
+            original: nombre,
+            normalizada: normalizar(nombre)
+        }));
+
+
+    // ===================================
+    // 2026
+    // ===================================
+    //
+    // La hoja de 2026 es CUADRANTE.
+    //
+if (anio === 2026) {
+
+    const encontrada =
+        hojasNormalizadas.find(
+            hoja =>
+                hoja.normalizada === "CUADRANTE2026"
+        );
+
+    if (encontrada) {
+
+        console.log(
+            "✅ HOJA 2026 ENCONTRADA:",
+            encontrada.original
+        );
+
+        return workbook.Sheets[
+            encontrada.original
+        ];
+    }
+
+    console.error(
+        "❌ NO EXISTE LA HOJA CUADRANTE2026"
+    );
+
+    return null;
+}
+
+
+    // ===================================
+    // 2027 Y AÑOS POSTERIORES
+    // ===================================
+
+    const nombreBuscado =
+        "CUADRANTE" + anio;
+
+    const encontrada =
+        hojasNormalizadas.find(
+            hoja =>
+                hoja.normalizada === nombreBuscado
+        );
+
+    if (encontrada) {
+
+        console.log(
+            "✅ HOJA ENCONTRADA:",
+            encontrada.original
+        );
+
+        return workbook.Sheets[
+            encontrada.original
+        ];
+    }
+
+
+    // ===================================
+    // RESPALDO:
+    // Si por alguna razón 2027 está
+    // también en CUADRANTE
+    // ===================================
+
+    if (anio === 2027) {
+
+        const respaldo =
+            hojasNormalizadas.find(
+                hoja =>
+                    hoja.normalizada === "CUADRANTE"
+            );
+
+        if (respaldo) {
+
+            console.warn(
+                "⚠️ NO EXISTE CUADRANTE2027."
+            );
+
+            console.warn(
+                "⚠️ SE UTILIZARÁ CUADRANTE COMO RESPALDO."
+            );
+
+            return workbook.Sheets[
+                respaldo.original
+            ];
+        }
+    }
+
+
+    console.error(
+        "❌ NO SE ENCONTRÓ HOJA PARA:",
+        anio
+    );
+
+    console.error(
+        "❌ SE BUSCÓ:",
+        nombreBuscado
+    );
+
+    return null;
+}
 
 
 // =======================================
@@ -87,278 +247,1083 @@ async function cargarExcelServidor() {
 
 function procesarWorkbook(workbook) {
 
+    const selectorAno =
+        document.getElementById("anos");
+
+    const ano =
+        selectorAno && selectorAno.value
+            ? Number(selectorAno.value)
+            : Number(anoSeleccionado);
+
+    anoSeleccionado =
+        ano;
+
+    console.log("=================================");
+    console.log("📅 AÑO SELECCIONADO:", ano);
+    console.log("=================================");
+
+
+    // ===================================
+    // BUSCAR CUADRANTE
+    // ===================================
+
     const hoja =
-        workbook.Sheets["CUADRANTE"];
+        buscarHojaCuadrante(
+            workbook,
+            ano
+        );
 
 
     if (!hoja) {
 
-        alert("No existe la hoja CUADRANTE");
+        console.error(
+            "❌ NO SE ENCONTRÓ EL CUADRANTE"
+        );
+
+        alert(
+            "No se encontró el cuadrante de " +
+            ano +
+            ".\n\nHojas disponibles:\n" +
+            workbook.SheetNames.join("\n")
+        );
 
         return;
-
     }
 
+
+    console.log(
+        "================================="
+    );
+
+    console.log(
+        "✅ CUADRANTE ENCONTRADO"
+    );
+
+    console.log(
+        "📐 RANGO:",
+        hoja["!ref"]
+    );
+
+    console.log(
+        "================================="
+    );
+
+
+    // ===================================
+    // DIAGNÓSTICO REAL
+    // ===================================
+
+    diagnosticarCabecera(hoja);
+
+
+    // ===================================
+    // LEER DÍAS
+    // ===================================
 
     leerDias(hoja);
 
+    console.log(
+        "📅 DÍAS LEÍDOS:",
+        dias.length
+    );
+
+
+    // ===================================
+    // LEER EMPLEADOS
+    // ===================================
+
     leerEmpleados(hoja);
 
-    // =======================================
+    console.log(
+        "👥 EMPLEADOS LEÍDOS:",
+        empleados.length
+    );
+
+
+    // ===================================
     // LEER FESTIVOS
-    // =======================================
-leerFestivos(workbook);
+    // ===================================
 
-console.log("=================================");
-console.log("🔴 FESTIVOS ANTES DE RENDERIZAR:");
-console.table(festivos);
-console.log("=================================");
+    leerFestivos(
+        workbook,
+        ano
+    );
 
-actualizarSelectorMeses();
-
-
-    console.log("DIAS:", dias);
-
-    console.log("EMPLEADOS:", empleados);
-
-    console.log("FESTIVOS:", festivos);
+    console.log(
+        "🔴 FESTIVOS:",
+        festivos
+    );
 
 
-    renderTabla();
+    // ===================================
+    // COMPROBAR DÍAS
+    // ===================================
 
-    cargarDiasConsulta();
+    if (
+        !Array.isArray(dias) ||
+        dias.length === 0
+    ) {
 
-    cargarRangoDias();
+        console.error(
+            "❌ NO SE HAN PODIDO LEER LOS DÍAS DE",
+            ano
+        );
 
-    seleccionarDiaActualODisponible();
+        alert(
+            "El cuadrante de " +
+            ano +
+            " existe, pero no se han podido leer las fechas."
+        );
 
-}
-
-// =======================================
-// LEER FESTIVOS
-// HOJA "Festivos"
-// COLUMNA B
-// SOLO AÑO 2026
-// =======================================
-
-function leerFestivos(workbook) {
-
-    festivos = [];
-
-    const hoja =
-    workbook.Sheets["FESTIVOS"];
-
-    if (!hoja) {
-        console.error('❌ NO EXISTE LA HOJA "Festivos"');
         return;
     }
 
-    console.log("=================================");
-    console.log("🔴 LEYENDO COLUMNA B DE FESTIVOS");
-    console.log("=================================");
 
-    const rango = XLSX.utils.decode_range(hoja["!ref"]);
+    // ===================================
+    // COMPROBAR EMPLEADOS
+    // ===================================
 
-    // B = columna 1
-    const columnaB = 1;
-
-    for (
-        let fila = rango.s.r;
-        fila <= rango.e.r;
-        fila++
+    if (
+        !Array.isArray(empleados) ||
+        empleados.length === 0
     ) {
 
-        const direccion = XLSX.utils.encode_cell({
-            r: fila,
-            c: columnaB
-        });
+        console.error(
+            "❌ NO SE HAN PODIDO LEER LOS EMPLEADOS DE",
+            ano
+        );
 
-        const celda = hoja[direccion];
+        alert(
+            "El cuadrante de " +
+            ano +
+            " existe, pero no se han podido leer los empleados."
+        );
+
+        return;
+    }
+
+
+    // ===================================
+    // ACTUALIZAR MESES
+    // ===================================
+
+    actualizarSelectorMeses();
+
+
+    // ===================================
+    // MOSTRAR DATOS
+    // ===================================
+
+    console.log(
+        "📅 DIAS:",
+        dias
+    );
+
+    console.log(
+        "👥 EMPLEADOS:",
+        empleados
+    );
+
+    console.log(
+        "🔴 FESTIVOS:",
+        festivos
+    );
+
+
+    // ===================================
+    // PINTAR
+    // ===================================
+
+    renderTabla();
+
+
+    if (
+        typeof cargarDiasConsulta ===
+        "function"
+    ) {
+
+        cargarDiasConsulta();
+    }
+
+
+    if (
+        typeof cargarRangoDias ===
+        "function"
+    ) {
+
+        cargarRangoDias();
+    }
+
+
+    if (
+        typeof seleccionarDiaActualODisponible ===
+        "function"
+    ) {
+
+        seleccionarDiaActualODisponible();
+    }
+}
+
+
+// =======================================
+// DIAGNÓSTICO DE LA FILA 6
+// =======================================
+//
+// Esto NO modifica nada.
+// Solo nos enseña exactamente qué
+// contiene H6, I6, J6...
+//
+// =======================================
+
+function diagnosticarCabecera(hoja) {
+
+    console.log("=================================");
+    console.log("🔴 DIAGNÓSTICO REAL DEL CUADRANTE");
+    console.log("🔴 AÑO:", anoSeleccionado);
+    console.log("🔴 REF:", hoja["!ref"]);
+    console.log("=================================");
+
+
+    for (let c = 0; c < 40; c++) {
+
+        const dir =
+            XLSX.utils.encode_cell({
+                r: 5,
+                c: c
+            });
+
+        const celda =
+            hoja[dir];
+
+        console.log(
+            dir,
+            celda
+                ? {
+                    v: celda.v,
+                    w: celda.w,
+                    t: celda.t,
+                    z: celda.z
+                }
+                : "CELDA VACÍA"
+        );
+    }
+
+    console.log("=================================");
+}
+
+
+// =======================================
+// LEER DÍAS DEL CUADRANTE
+// =======================================
+//
+// FILA 6 DE EXCEL = índice 5
+// COLUMNA H = índice 7
+//
+// NO vamos a suponer que las fechas
+// empiezan exactamente en H si existen
+// columnas anteriores vacías.
+//
+// Buscamos todas las fechas de la fila 6.
+// =======================================
+
+function leerDias(hoja) {
+
+    dias = [];
+
+
+    if (!hoja) {
+
+        console.error(
+            "❌ leerDias: hoja inexistente"
+        );
+
+        return;
+    }
+
+
+    if (!hoja["!ref"]) {
+
+        console.error(
+            "❌ leerDias: la hoja no tiene !ref"
+        );
+
+        return;
+    }
+
+
+    const rango =
+        XLSX.utils.decode_range(
+            hoja["!ref"]
+        );
+
+
+    const filaCabecera = 5;
+
+    const columnaInicial = 7;
+
+
+    console.log("=================================");
+    console.log("📅 LEYENDO DÍAS DEL CUADRANTE");
+    console.log(
+        "📅 AÑO SELECCIONADO:",
+        anoSeleccionado
+    );
+    console.log(
+        "📐 RANGO:",
+        hoja["!ref"]
+    );
+    console.log(
+        "📍 EMPEZAMOS EN H6"
+    );
+    console.log("=================================");
+
+
+    for (
+        let col = columnaInicial;
+        col <= rango.e.c;
+        col++
+    ) {
+
+        const direccion =
+            XLSX.utils.encode_cell({
+                r: filaCabecera,
+                c: col
+            });
+
+
+        const celda =
+            hoja[direccion];
+
 
         if (!celda) {
             continue;
         }
 
+
         console.log(
-            "CELDA",
+            "🔎",
             direccion,
             "v=",
             celda.v,
             "w=",
             celda.w,
             "t=",
-            celda.t
+            celda.t,
+            "z=",
+            celda.z
         );
 
-        let fecha = null;
+
+        const fecha =
+            convertirFechaExcel(
+                celda
+            );
+
+
+        if (!fecha) {
+
+            console.warn(
+                "⚠️ No se pudo convertir:",
+                direccion,
+                celda
+            );
+
+            continue;
+        }
+
+
+        console.log(
+            "📅 FECHA DETECTADA:",
+            direccion,
+            "→",
+            fecha.toLocaleDateString("es-ES")
+        );
+
 
         // ===================================
-        // 1. FECHA REAL
+        // SOLO EL AÑO SELECCIONADO
         // ===================================
 
-        if (celda.v instanceof Date) {
+        if (
+            fecha.getFullYear() !==
+            Number(anoSeleccionado)
+        ) {
 
-            fecha = new Date(
+            console.log(
+                "⏭️ FECHA FUERA DEL AÑO:",
+                direccion,
+                fecha.getFullYear()
+            );
+
+            continue;
+        }
+
+
+        dias.push({
+
+            dia:
+                fecha.getDate(),
+
+            mes:
+                fecha.getMonth() + 1,
+
+            anio:
+                fecha.getFullYear(),
+
+            fecha:
+                fecha,
+
+            col:
+                col
+        });
+
+
+        console.log(
+            "✅ DÍA LEÍDO:",
+            direccion,
+            "→",
+            fecha.getDate(),
+            "/",
+            fecha.getMonth() + 1,
+            "/",
+            fecha.getFullYear()
+        );
+    }
+
+
+    // ===================================
+    // ORDENAR
+    // ===================================
+
+    dias.sort(
+        (a, b) =>
+            a.col - b.col
+    );
+
+
+    console.log("=================================");
+    console.log(
+        "📅 TOTAL DÍAS LEÍDOS:",
+        dias.length
+    );
+
+
+    if (dias.length > 0) {
+
+        console.log(
+            "📅 PRIMER DÍA:",
+            dias[0].dia +
+            "/" +
+            dias[0].mes +
+            "/" +
+            dias[0].anio
+        );
+
+        console.log(
+            "📅 ÚLTIMO DÍA:",
+            dias[dias.length - 1].dia +
+            "/" +
+            dias[dias.length - 1].mes +
+            "/" +
+            dias[dias.length - 1].anio
+        );
+
+        console.log(
+            "📍 COLUMNA PRIMER DÍA:",
+            dias[0].col,
+            XLSX.utils.encode_col(
+                dias[0].col
+            )
+        );
+
+        console.log(
+            "📍 COLUMNA ÚLTIMO DÍA:",
+            dias[dias.length - 1].col,
+            XLSX.utils.encode_col(
+                dias[dias.length - 1].col
+            )
+        );
+    }
+
+
+    console.log("=================================");
+
+    console.table(dias);
+}
+
+
+// =======================================
+// CONVERTIR FECHA DE EXCEL
+// =======================================
+
+function convertirFechaExcel(celda) {
+
+    if (!celda) {
+        return null;
+    }
+
+
+    // ===================================
+    // 1. LA CELDA YA ES DATE
+    // ===================================
+
+    if (
+        celda.v instanceof Date
+    ) {
+
+        const fecha =
+            new Date(
                 celda.v.getFullYear(),
                 celda.v.getMonth(),
                 celda.v.getDate()
             );
 
+        if (
+            !isNaN(
+                fecha.getTime()
+            )
+        ) {
+
+            return fecha;
         }
+    }
 
-        // ===================================
-        // 2. NÚMERO DE EXCEL
-        // ===================================
 
-        else if (typeof celda.v === "number") {
+    // ===================================
+    // 2. NÚMERO SERIAL DE EXCEL
+    // ===================================
 
-            const f =
-                XLSX.SSF.parse_date_code(celda.v);
+    if (
+        typeof celda.v === "number"
+    ) {
 
-            if (f) {
+        const partes =
+            XLSX.SSF.parse_date_code(
+                celda.v
+            );
 
-                fecha = new Date(
-                    f.y,
-                    f.m - 1,
-                    f.d
+
+        if (partes) {
+
+            const fecha =
+                new Date(
+                    partes.y,
+                    partes.m - 1,
+                    partes.d
                 );
 
+
+            if (
+                !isNaN(
+                    fecha.getTime()
+                )
+            ) {
+
+                return fecha;
             }
-
         }
+    }
 
-        // ===================================
-        // 3. TEXTO
-        // ===================================
 
-        else {
+    // ===================================
+    // 3. TEXTO
+    // ===================================
 
-            // Primero usamos el valor mostrado por Excel
-            const texto =
-                String(
-                    celda.w ??
-                    celda.v ??
-                    ""
-                ).trim();
+    let texto =
+        celda.w ??
+        celda.v ??
+        "";
 
-            // DD/MM/YYYY
-            let partes =
-                texto.match(
-                    /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
-                );
 
-            if (partes) {
+    texto =
+        String(texto)
+            .trim();
 
-                const dia =
-                    Number(partes[1]);
 
-                const mes =
-                    Number(partes[2]);
+    if (!texto) {
+        return null;
+    }
 
-                const anio =
-                    Number(partes[3]);
 
-                fecha = new Date(
-                    anio,
-                    mes - 1,
+    // ===================================
+    // QUITAR HORA
+    // ===================================
+
+    texto =
+        texto
+            .replace(
+                /T\d{1,2}:\d{2}(?::\d{2})?.*$/i,
+                ""
+            )
+            .replace(
+                /\s+\d{1,2}:\d{2}(?::\d{2})?.*$/i,
+                ""
+            )
+            .trim();
+
+
+    // ===================================
+    // 4. DD/MM/YYYY
+    // DD-MM-YYYY
+    // DD.MM.YYYY
+    // ===================================
+
+    let partes =
+        texto.match(
+            /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/
+        );
+
+
+    if (partes) {
+
+        const dia =
+            Number(partes[1]);
+
+        const mes =
+            Number(partes[2]);
+
+        const ano =
+            Number(partes[3]);
+
+
+        const fecha =
+            new Date(
+                ano,
+                mes - 1,
+                dia
+            );
+
+
+        if (
+            fecha.getFullYear() === ano &&
+            fecha.getMonth() === mes - 1 &&
+            fecha.getDate() === dia
+        ) {
+
+            return fecha;
+        }
+    }
+
+
+    // ===================================
+    // 5. YYYY-MM-DD
+    // YYYY/MM/DD
+    // YYYY.MM.DD
+    // ===================================
+
+    partes =
+        texto.match(
+            /^(\d{4})[\/.\-](\d{1,2})[\/.\-](\d{1,2})$/
+        );
+
+
+    if (partes) {
+
+        const ano =
+            Number(partes[1]);
+
+        const mes =
+            Number(partes[2]);
+
+        const dia =
+            Number(partes[3]);
+
+
+        const fecha =
+            new Date(
+                ano,
+                mes - 1,
+                dia
+            );
+
+
+        if (
+            fecha.getFullYear() === ano &&
+            fecha.getMonth() === mes - 1 &&
+            fecha.getDate() === dia
+        ) {
+
+            return fecha;
+        }
+    }
+
+
+    // ===================================
+    // 6. TEXTO CON FORMATO ESPAÑOL
+    // ===================================
+    //
+    // Por ejemplo:
+    // "1 enero 2027"
+    // "01 enero 2027"
+    //
+
+    const meses =
+        {
+            enero: 0,
+            febrero: 1,
+            marzo: 2,
+            abril: 3,
+            mayo: 4,
+            junio: 5,
+            julio: 6,
+            agosto: 7,
+            septiembre: 8,
+            octubre: 9,
+            noviembre: 10,
+            diciembre: 11
+        };
+
+
+    partes =
+        texto
+            .toLowerCase()
+            .match(
+                /^(\d{1,2})\s+([a-záéíóúñ]+)\s+(\d{4})$/
+            );
+
+
+    if (partes) {
+
+        const dia =
+            Number(partes[1]);
+
+        const nombreMes =
+            partes[2];
+
+        const ano =
+            Number(partes[3]);
+
+        const mes =
+            meses[nombreMes];
+
+
+        if (
+            mes !== undefined
+        ) {
+
+            const fecha =
+                new Date(
+                    ano,
+                    mes,
                     dia
                 );
 
+
+            if (
+                fecha.getFullYear() === ano &&
+                fecha.getMonth() === mes &&
+                fecha.getDate() === dia
+            ) {
+
+                return fecha;
             }
-
-            // YYYY-MM-DD
-            if (!fecha) {
-
-                partes =
-                    texto.match(
-                        /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/
-                    );
-
-                if (partes) {
-
-                    const anio =
-                        Number(partes[1]);
-
-                    const mes =
-                        Number(partes[2]);
-
-                    const dia =
-                        Number(partes[3]);
-
-                    fecha = new Date(
-                        anio,
-                        mes - 1,
-                        dia
-                    );
-
-                }
-
-            }
-
         }
+    }
 
-        // ===================================
-        // VALIDAR
-        // ===================================
 
-        if (
-            !fecha ||
-            isNaN(fecha.getTime())
-        ) {
+    // ===================================
+    // 7. ÚLTIMO INTENTO
+    // ===================================
+
+    const fechaISO =
+        new Date(texto);
+
+
+    if (
+        !isNaN(
+            fechaISO.getTime()
+        ) &&
+        fechaISO.getFullYear() >= 1900
+    ) {
+
+        return new Date(
+            fechaISO.getFullYear(),
+            fechaISO.getMonth(),
+            fechaISO.getDate()
+        );
+    }
+
+
+    console.warn(
+        "⚠️ FECHA NO RECONOCIDA:",
+        texto,
+        celda
+    );
+
+
+    return null;
+}
+
+
+// =======================================
+// LEER FESTIVOS
+// =======================================
+//
+// 2026 -> columna B
+// 2027 -> columna C
+// 2028 -> columna D
+// 2029 -> columna E
+// etc.
+//
+// La hoja siempre es FESTIVOS.
+// =======================================
+
+function leerFestivos(
+    workbook,
+    ano
+) {
+
+    festivos = [];
+
+    const anio = Number(ano);
+
+    console.log("=================================");
+    console.log("🔴 LEYENDO FESTIVOS");
+    console.log("🔴 AÑO:", anio);
+    console.log("=================================");
+
+    // ===================================
+    // BUSCAR HOJA FESTIVOS
+    // ===================================
+
+    const nombreHoja =
+        (workbook.SheetNames || [])
+            .find(
+                nombre =>
+                    String(nombre)
+                        .trim()
+                        .toUpperCase() === "FESTIVOS"
+            );
+
+    if (!nombreHoja) {
+
+        console.warn(
+            '⚠️ No existe la hoja "FESTIVOS"'
+        );
+
+        return;
+    }
+
+    const hoja =
+        workbook.Sheets[nombreHoja];
+
+    if (!hoja) {
+
+        console.warn(
+            "⚠️ La hoja FESTIVOS no existe."
+        );
+
+        return;
+    }
+
+    // ===================================
+    // CALCULAR COLUMNA SEGÚN EL AÑO
+    // ===================================
+    //
+    // 2026 = B = índice 1
+    // 2027 = C = índice 2
+    // 2028 = D = índice 3
+    // etc.
+    // ===================================
+
+    const columnaFestivos =
+        anio - 2025;
+
+    const letraColumna =
+        XLSX.utils.encode_col(
+            columnaFestivos
+        );
+
+    console.log(
+        "📍 COLUMNA DE FESTIVOS:",
+        letraColumna
+    );
+
+    console.log(
+        "📍 AÑO",
+        anio,
+        "→",
+        letraColumna
+    );
+
+    // ===================================
+    // RECORRER TODA LA COLUMNA
+    // ===================================
+    //
+    // NO usamos hoja["!ref"] para decidir
+    // hasta dónde leer.
+    //
+    // Leemos desde la fila 1 hasta la
+    // última fila posible de la hoja.
+    //
+    // Las celdas vacías simplemente se
+    // ignoran.
+    // ===================================
+
+    const MAX_FILAS = 1000;
+
+    for (
+        let fila = 0;
+        fila < MAX_FILAS;
+        fila++
+    ) {
+
+        const direccion =
+            XLSX.utils.encode_cell({
+                r: fila,
+                c: columnaFestivos
+            });
+
+        const celda =
+            hoja[direccion];
+
+        // =================================
+        // CELDA VACÍA
+        // =================================
+
+        if (!celda) {
             continue;
         }
 
-        // ===================================
-        // SOLO 2026
-        // ===================================
+        console.log(
+            "🔎 FESTIVO:",
+            direccion,
+            "v=",
+            celda.v,
+            "w=",
+            celda.w,
+            "t=",
+            celda.t,
+            "z=",
+            celda.z
+        );
 
-        if (
-            fecha.getFullYear() !== 2026
-        ) {
+        // =================================
+        // CONVERTIR FECHA
+        // =================================
+
+        const fecha =
+            convertirFechaExcel(
+                celda
+            );
+
+        if (!fecha) {
+
+            console.log(
+                "⏭️ No es una fecha:",
+                direccion
+            );
+
             continue;
         }
 
-        // ===================================
-        // GUARDAR
-        // ===================================
+        // =================================
+        // COMPROBAR AÑO
+        // =================================
+
+        if (
+            fecha.getFullYear() !== anio
+        ) {
+
+            console.log(
+                "⏭️ FESTIVO DE OTRO AÑO:",
+                direccion,
+                fecha
+            );
+
+            continue;
+        }
+
+        // =================================
+        // GUARDAR FESTIVO
+        // =================================
 
         festivos.push({
 
-            dia: fecha.getDate(),
+            dia:
+                fecha.getDate(),
 
-            mes: fecha.getMonth() + 1,
+            mes:
+                fecha.getMonth() + 1,
 
-            anio: fecha.getFullYear(),
+            anio:
+                fecha.getFullYear(),
 
-            fecha: fecha
-
+            fecha:
+                fecha
         });
 
+        console.log(
+            "✅ FESTIVO LEÍDO:",
+            direccion,
+            "→",
+            fecha.getDate() +
+            "/" +
+            (fecha.getMonth() + 1) +
+            "/" +
+            fecha.getFullYear()
+        );
     }
 
     // ===================================
     // QUITAR DUPLICADOS
     // ===================================
 
-    festivos = festivos.filter(
-        (festivo, indice, array) =>
-            indice === array.findIndex(
-                otro =>
-                    otro.dia === festivo.dia &&
-                    otro.mes === festivo.mes &&
-                    otro.anio === festivo.anio
-            )
+    festivos =
+        festivos.filter(
+            (
+                festivo,
+                indice,
+                array
+            ) =>
+                indice ===
+                array.findIndex(
+                    otro =>
+                        otro.dia ===
+                            festivo.dia &&
+                        otro.mes ===
+                            festivo.mes &&
+                        otro.anio ===
+                            festivo.anio
+                )
+        );
+
+    // ===================================
+    // ORDENAR POR FECHA
+    // ===================================
+
+    festivos.sort(
+        (a, b) =>
+            a.fecha - b.fecha
     );
 
+    // ===================================
+    // RESULTADO
+    // ===================================
+
+    console.log("=================================");
+
     console.log(
-        "🔴🔴🔴 FESTIVOS 2026:",
+        "🔴 FESTIVOS " + anio + ":",
         festivos
     );
 
-    console.table(festivos);
+    console.log(
+        "🔴 TOTAL FESTIVOS:",
+        festivos.length
+    );
+
+    console.log(
+        "📍 COLUMNA UTILIZADA:",
+        letraColumna
+    );
+
+    console.log("=================================");
+
+    console.table(
+        festivos
+    );
 }
-
-
 
 // =======================================
 // OBTENER MESES DISPONIBLES
@@ -366,14 +1331,18 @@ function leerFestivos(workbook) {
 
 function obtenerMesesDisponibles() {
 
-
-    return [...new Set(dias.map(d => d.mes))]
-        .sort((a, b) => a - b);
-
-
+    return [
+        ...new Set(
+            dias.map(
+                d =>
+                    Number(d.mes)
+            )
+        )
+    ].sort(
+        (a, b) =>
+            a - b
+    );
 }
-
-
 
 
 // =======================================
@@ -382,18 +1351,15 @@ function obtenerMesesDisponibles() {
 
 function actualizarSelectorMeses() {
 
-
-    const select = document.getElementById("meses");
+    const select =
+        document.getElementById(
+            "meses"
+        );
 
 
     if (!select) {
-
-        console.log("No existe el selector de meses");
-
         return;
-
     }
-
 
 
     const mesesTexto = [
@@ -414,200 +1380,121 @@ function actualizarSelectorMeses() {
     ];
 
 
+    const mesesDisponibles =
+        obtenerMesesDisponibles();
+
 
     select.innerHTML = "";
 
 
-
-    obtenerMesesDisponibles().forEach(mes => {
-
-
-
-        const option = document.createElement("option");
-
-
-
-        option.value = mes;
-
-
-        option.textContent = mesesTexto[mes - 1];
-
-
-
-        select.appendChild(option);
-
-
-
-    });
-
-
-
-    const mesActual = new Date().getMonth() + 1;
-
-
-
-if (obtenerMesesDisponibles().includes(mesActual)) {
-
-    select.value = mesActual;
-    mesSeleccionado = mesActual;
-
-} else if (select.options.length > 0) {
-
-    select.value = select.options[0].value;
-    mesSeleccionado = Number(select.value);
-
-}
-
-
-select.onchange = function() {
-
-    mesSeleccionado = Number(this.value);
-
-    renderTabla();
-
-    if (typeof cargarDiasConsulta === "function") {
-        cargarDiasConsulta();
-    }
-
-    const resultado = document.getElementById("resultadoDia");
-
-    if (resultado) {
-        resultado.innerHTML = "";
-    }
-
-};
-
-
-
-    console.log(
-
-        "MESES EN SELECT:",
-
-        [...select.options].map(o => o.value)
-
-    );
-
-
-}
-
-
-// =======================================
-// LEER DÍAS
-// =======================================
-
-function leerDias(sheet) {
-
-
-    dias = [];
-
-
-    const filaCabecera = 5; // fila 6 Excel
-
-
-    const rango = XLSX.utils.decode_range(sheet["!ref"]);
-
-
-
-    for (let col = 7; col <= rango.e.c; col++) {
-
-
-
-        const celda = sheet[
-            XLSX.utils.encode_cell({
-                r: filaCabecera,
-                c: col
-            })
-        ];
-
-
-
-        if (!celda) {
-            continue;
-        }
-
-
-
-        let fecha = null;
-
-
-
-        // Fecha real Excel
-
-        if (celda.v instanceof Date) {
-
-            fecha = celda.v;
-
-        }
-
-
-
-        // Fecha numérica Excel
-
-        else if (typeof celda.v === "number") {
-
-
-            const f = XLSX.SSF.parse_date_code(celda.v);
-
-
-            if (f) {
-
-                fecha = new Date(
-                    f.y,
-                    f.m - 1,
-                    f.d
+    mesesDisponibles.forEach(
+        mes => {
+
+            const option =
+                document.createElement(
+                    "option"
                 );
 
-            }
 
+            option.value =
+                String(mes);
+
+
+            option.textContent =
+                mesesTexto[
+                    mes - 1
+                ];
+
+
+            select.appendChild(
+                option
+            );
         }
+    );
 
 
+    if (
+        mesesDisponibles.length === 0
+    ) {
 
-        if (
-            fecha &&
-            !isNaN(fecha.getTime())
-        ) {
-
-
-            dias.push({
-
-                dia: fecha.getDate(),
-
-                mes: fecha.getMonth() + 1,
-
-                fecha: fecha,
-
-                col: col
-
-            });
-
-
-        }
-
-
+        return;
     }
 
 
+    // ===================================
+    // MANTENER MES
+    // ===================================
 
-    console.log(
-        "TOTAL DIAS LEIDOS:",
-        dias.length
-    );
+    if (
+        mesesDisponibles.includes(
+            Number(mesSeleccionado)
+        )
+    ) {
+
+        select.value =
+            String(
+                mesSeleccionado
+            );
+
+    } else {
+
+        select.value =
+            String(
+                mesesDisponibles[0]
+            );
+
+        mesSeleccionado =
+            mesesDisponibles[0];
+    }
 
 
-    console.log(
-        "MESES CARGADOS:",
-        [...new Set(dias.map(d => d.mes))]
-    );
+    // ===================================
+    // CAMBIO DE MES
+    // ===================================
+
+    select.onchange =
+        function () {
+
+            mesSeleccionado =
+                Number(
+                    this.value
+                );
 
 
-    console.table(dias);
+            renderTabla();
 
 
+            if (
+                typeof cargarDiasConsulta ===
+                "function"
+            ) {
+
+                cargarDiasConsulta();
+            }
+
+
+            if (
+                typeof cargarRangoDias ===
+                "function"
+            ) {
+
+                cargarRangoDias();
+            }
+
+
+            const resultado =
+                document.getElementById(
+                    "resultadoDia"
+                );
+
+
+            if (resultado) {
+
+                resultado.innerHTML =
+                    "";
+            }
+        };
 }
-
-
-
 
 
 // =======================================
@@ -616,122 +1503,127 @@ function leerDias(sheet) {
 
 function leerEmpleados(hoja) {
 
-
     empleados = [];
 
 
+    if (!hoja) {
+        return;
+    }
+
+
+    // FILA 7 DE EXCEL
     let fila = 6;
 
 
+    while (true) {
 
-    while(true) {
+        const celdaNombre =
+            hoja[
+                "A" +
+                (fila + 1)
+            ];
 
 
-        const nombre = hoja[
-            "A" + (fila + 1)
-        ]?.v;
+        const nombre =
+            celdaNombre?.v;
 
 
+        if (
+            nombre === undefined ||
+            nombre === null ||
+            String(nombre).trim() === ""
+        ) {
 
-        if (!nombre) break;
-
+            break;
+        }
 
 
         const empleado = {
 
-
-            nombre: String(nombre).trim(),
-
+            nombre:
+                String(
+                    nombre
+                ).trim(),
 
             turnos: []
-
-
         };
 
 
+        dias.forEach(
+            dia => {
 
-       for (
-    let i = 0;
-    i < dias.length;
-    i++
-) {
+                const direccion =
+                    XLSX.utils.encode_cell({
 
+                        r:
+                            fila,
 
-    const c = dias[i].col;
-
-
-
-            const direccion =
-                XLSX.utils.encode_cell({
-
-                    r: fila,
-
-                    c: c
-
-                });
+                        c:
+                            dia.col
+                    });
 
 
+                let valor =
+                    hoja[
+                        direccion
+                    ]?.v ??
+                    "";
 
-            let valor =
-                hoja[direccion]?.v ?? "";
+
+                valor =
+                    String(
+                        valor
+                    ).trim();
 
 
+                if (
+                    valor === "PENDIENTE" ||
+                    valor === "HECHO" ||
+                    valor === "NO ES POSIBLE" ||
+                    valor === "COMPLETED"
+                ) {
 
-            // limpiar valores accidentales
+                    valor = "";
+                }
 
-            if (
 
-                valor === "PENDIENTE" ||
-
-                valor === "HECHO" ||
-
-                valor === "NO ES POSIBLE" ||
-
-                valor === "COMPLETED"
-
-            ) {
-
-                valor = "";
-
+                empleado.turnos.push(
+                    valor
+                );
             }
+        );
 
 
+        empleados.push(
+            empleado
+        );
 
-            empleado.turnos.push(valor);
-
-
-
-        }
-
-
-
-        empleados.push(empleado);
-
-if (empleados.length === 1) {
-    
-    console.log(
-    "PRIMER EMPLEADO:",
-    empleado.nombre,
-    empleado.turnos
-);
-
-}
 
         fila++;
-
-
     }
 
 
+    console.log(
+        "👥 TOTAL EMPLEADOS:",
+        empleados.length
+    );
 
-    console.table(empleados);
+
+    if (
+        empleados.length > 0
+    ) {
+
+        console.log(
+            "👤 PRIMER EMPLEADO:",
+            empleados[0]
+        );
+    }
 
 
+    console.table(
+        empleados
+    );
 }
-
-
-
-
 
 
 // =======================================
@@ -739,18 +1631,30 @@ if (empleados.length === 1) {
 // =======================================
 
 document.addEventListener(
-"DOMContentLoaded",
-()=>{
+    "DOMContentLoaded",
+    () => {
+
+        const selectorAno =
+            document.getElementById(
+                "anos"
+            );
 
 
-    cargarExcelServidor();
+        if (
+            selectorAno &&
+            selectorAno.value
+        ) {
+
+            anoSeleccionado =
+                Number(
+                    selectorAno.value
+                );
+        }
 
 
-});
-
-
-
-
+        cargarExcelServidor();
+    }
+);
 
 
 // =======================================
@@ -758,74 +1662,62 @@ document.addEventListener(
 // =======================================
 
 document.addEventListener(
-"DOMContentLoaded",
-()=>{
+    "DOMContentLoaded",
+    () => {
 
-
-    const btnActualizar =
-        document.getElementById("btnActualizar");
-
-
-
-    if(!btnActualizar) return;
-
-
-
-    btnActualizar.addEventListener(
-    "click",
-    async()=>{
-
-
-        btnActualizar.disabled = true;
-
-
-        btnActualizar.textContent =
-            "⏳ Actualizando...";
-
-
-
-        try {
-
-
-            await cargarExcelServidor();
-
-
-
-            alert(
-                "✅ Turnos actualizados correctamente"
+        const btnActualizar =
+            document.getElementById(
+                "btnActualizar"
             );
 
 
-
-        } catch(error) {
-
-
-            console.error(error);
-
-
-
-            alert(
-                "Error al actualizar los turnos."
-            );
-
-
-
-        } finally {
-
-
-            btnActualizar.disabled = false;
-
-
-
-            btnActualizar.textContent =
-                "🔄 Actualizar turnos";
-
-
+        if (!btnActualizar) {
+            return;
         }
 
 
+        btnActualizar.addEventListener(
+            "click",
+            async () => {
 
-    });
+                btnActualizar.disabled =
+                    true;
 
 
-});
+                btnActualizar.textContent =
+                    "⏳ Actualizando...";
+
+
+                try {
+
+                    await cargarExcelServidor();
+
+
+                    alert(
+                        "✅ Turnos actualizados correctamente"
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        error
+                    );
+
+
+                    alert(
+                        "❌ Error al actualizar los turnos."
+                    );
+
+                } finally {
+
+                    btnActualizar.disabled =
+                        false;
+
+
+                    btnActualizar.textContent =
+                        "🔄 Actualizar turnos";
+                }
+            }
+        );
+    }
+);
