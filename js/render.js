@@ -1349,24 +1349,42 @@ function comprobarFaltaPersonal() {
             diaSemana === 0 ||
             diaSemana === 6;
 
-        /* =================================================
-           MÍNIMOS
-           ================================================= */
+// =======================================
+// MÍNIMOS DE PERSONAL
+// =======================================
 
-        const minimoM =
-            esFinDeSemana
-                ? 2
-                : 10;
+let minimoM;
+let minimoT;
+let minimoN;
 
-        const minimoT =
-            esFinDeSemana
-                ? 2
-                : 9;
+if (diaSemana === 6) {
 
-        const minimoN =
-            esFinDeSemana
-                ? 2
-                : 5;
+    // SÁBADO
+    minimoM = 2;
+    minimoT = 2;
+    minimoN = 2;
+
+} else if (diaSemana === 5) {
+
+    // VIERNES
+    minimoM = 10;
+    minimoT = 9;
+    minimoN = 2;
+
+} else if (diaSemana === 0) {
+
+    // DOMINGO
+    minimoM = 2;
+    minimoT = 2;
+    minimoN = 5;
+
+} else {
+
+    // LUNES - JUEVES
+    minimoM = 10;
+    minimoT = 9;
+    minimoN = 5;
+}
 
         /* =================================================
            CONTAR
