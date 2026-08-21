@@ -1,5 +1,56 @@
 "use strict";
 
+
+// ========================================
+// SELECTOR DINÁMICO DE AÑOS
+// ========================================
+
+function cargarSelectorAnios() {
+
+    const selectorAnos =
+        document.getElementById("anos");
+
+    if (!selectorAnos) return;
+
+    const anoActual = 2026;
+
+    const anoInicial = anoActual - 10;
+    const anoFinal = anoActual + 10;
+
+    selectorAnos.innerHTML = "";
+
+    for (
+        let ano = anoInicial;
+        ano <= anoFinal;
+        ano++
+    ) {
+
+        const option =
+            document.createElement("option");
+
+        option.value = String(ano);
+// ========================================
+// NOMBRE DEL CUADRANTE
+// ========================================
+
+option.textContent =
+    `CUADRANTE${ano}`;
+
+if (ano === 2026) {
+    option.selected = true;
+}
+
+        if (ano === 2026) {
+            option.selected = true;
+        }
+
+        selectorAnos.appendChild(option);
+    }
+}
+
+
+
+
 // =======================================
 // DATOS GLOBALES
 // =======================================
@@ -8,7 +59,11 @@ let empleados = [];
 let dias = [];
 let festivos = [];
 
-let mesSeleccionado = new Date().getMonth() + 1;
+let mesSeleccionado =
+    new Date().getMonth() + 1;
+
+let anoSeleccionado =
+    new Date().getFullYear();
 
 let filtroEmpleado = [];
 
@@ -17,283 +72,407 @@ let filtroEmpleado = [];
 // INICIO
 // =======================================
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-    const selectorMes =
-        document.getElementById("meses");
+        const selectorMes =
+            document.getElementById("meses");
 
-    const buscar =
-        document.getElementById("buscar");
+            // ===================================
+// CARGAR SELECTOR DE AÑOS
+// ===================================
 
-    const diaConsulta =
-        document.getElementById("diaConsulta");
+cargarSelectorAnios();
 
-    const diaDesde =
-        document.getElementById("diaDesde");
+        const selectorAno =
+            document.getElementById("anos");
 
-    const diaHasta =
-        document.getElementById("diaHasta");
+        const buscar =
+            document.getElementById("buscar");
 
-    const btnConsultar =
-        document.getElementById("btnConsultar");
+        const diaConsulta =
+            document.getElementById("diaConsulta");
 
-    const btnCerrarConsulta =
-        document.getElementById("btnCerrarConsulta");
+        const diaDesde =
+            document.getElementById("diaDesde");
 
-    const btnActualizar =
-        document.getElementById("btnActualizar");
+        const diaHasta =
+            document.getElementById("diaHasta");
 
-    const resultadoDia =
-        document.getElementById("resultadoDia");
+        const btnConsultar =
+            document.getElementById("btnConsultar");
+
+        const btnCerrarConsulta =
+            document.getElementById(
+                "btnCerrarConsulta"
+            );
+
+        const btnActualizar =
+            document.getElementById(
+                "btnActualizar"
+            );
+
+        const resultadoDia =
+            document.getElementById(
+                "resultadoDia"
+            );
 
 
-    // ===================================
-    // ESTABLECER MES ACTUAL
-    // ===================================
+        // ===================================
+        // ESTABLECER MES
+        // ===================================
 
-    if (selectorMes) {
+        if (selectorMes) {
 
-        selectorMes.value =
-            String(mesSeleccionado);
+            selectorMes.value =
+                String(mesSeleccionado);
 
-    }
+        }
 
 
-    // ===================================
-    // CERRAR CONSULTA
-    // ===================================
+        // ===================================
+        // ESTABLECER AÑO
+        // ===================================
 
-    if (btnCerrarConsulta) {
+       if (selectorAno) {
 
-        btnCerrarConsulta.style.display =
-            "none";
+    selectorAno.addEventListener(
+        "change",
+        async () => {
 
-        btnCerrarConsulta.addEventListener(
-            "click",
-            () => {
+            anoSeleccionado =
+                Number(selectorAno.value);
 
-                if (resultadoDia) {
-                    resultadoDia.innerHTML = "";
-                }
+            console.log(
+                "📅 Año seleccionado:",
+                anoSeleccionado
+            );
 
-                btnCerrarConsulta.style.display =
-                    "none";
+            console.log(
+                "📂 Cuadrante seleccionado:",
+                anoSeleccionado === 2026
+                    ? "CUADRANTE"
+                    : `CUADRANTE${anoSeleccionado}`
+            );
+
+            empleados = [];
+            dias = [];
+            festivos = [];
+
+            if (resultadoDia) {
+                resultadoDia.innerHTML = "";
+            }
+
+            try {
+
+                await cargarExcelServidor();
+
+            } catch (error) {
+
+                console.error(
+                    "❌ Error al cargar el cuadrante:",
+                    error
+                );
 
             }
-        );
 
-    }
+        }
+    );
 
-
-    // ===================================
-    // BOTÓN CONSULTAR
-    // ===================================
-
-    if (btnConsultar) {
-
-        btnConsultar.addEventListener(
-            "click",
-            () => {
-
-                consultarPersonal();
-
-                if (btnCerrarConsulta) {
-
-                    btnCerrarConsulta.style.display =
-                        "inline-block";
-
-                }
-
-            }
-        );
-
-    }
+}
 
 
-    // ===================================
-    // CAMBIAR DÍA DE CONSULTA
-    // ===================================
+        // ===================================
+        // CAMBIAR AÑO
+        // ===================================
 
-    if (diaConsulta) {
+        if (selectorAno) {
 
-        diaConsulta.addEventListener(
-            "change",
-            () => {
+            selectorAno.addEventListener(
+                "change",
+                async () => {
 
-                consultarPersonal();
+                    anoSeleccionado =
+                        Number(
+                            selectorAno.value
+                        );
 
-            }
-        );
+                    console.log(
+                        "📅 Año cambiado a:",
+                        anoSeleccionado
+                    );
 
-    }
+                    // Limpiar datos actuales
+                    empleados = [];
+                    dias = [];
+                    festivos = [];
 
+                    if (resultadoDia) {
 
-    // ===================================
-    // CAMBIAR MES
-    // ===================================
+                        resultadoDia.innerHTML =
+                            "";
 
-    if (selectorMes) {
+                    }
 
-        selectorMes.addEventListener(
-            "change",
-            () => {
+                    try {
 
-                mesSeleccionado =
-                    Number(selectorMes.value);
+                        await cargarExcelServidor();
 
+                    } catch (error) {
 
-                // Cargar días del nuevo mes
-                cargarDiasConsulta();
+                        console.error(
+                            "❌ Error al cargar el año:",
+                            error
+                        );
 
-
-                // Cargar rango
-                cargarRangoDias();
-
-
-                // Pintar tabla
-                renderTabla();
-
-
-                // Limpiar consulta diaria
-                if (resultadoDia) {
-
-                    resultadoDia.innerHTML = "";
+                    }
 
                 }
+            );
 
-                if (btnCerrarConsulta) {
+        }
+
+
+        // ===================================
+        // CERRAR CONSULTA
+        // ===================================
+
+        if (btnCerrarConsulta) {
+
+            btnCerrarConsulta.style.display =
+                "none";
+
+            btnCerrarConsulta.addEventListener(
+                "click",
+                () => {
+
+                    if (resultadoDia) {
+
+                        resultadoDia.innerHTML =
+                            "";
+
+                    }
 
                     btnCerrarConsulta.style.display =
                         "none";
 
                 }
+            );
 
-            }
-        );
-
-    }
+        }
 
 
-    // ===================================
-    // BUSCAR EMPLEADO
-    // ===================================
+        // ===================================
+        // BOTÓN CONSULTAR
+        // ===================================
 
-    if (buscar) {
+        if (btnConsultar) {
 
-        buscar.addEventListener(
-            "input",
-            () => {
+            btnConsultar.addEventListener(
+                "click",
+                () => {
 
-                filtroEmpleado =
-                    buscar.value
-                        .toUpperCase()
-                        .split(",")
-                        .map(nombre =>
-                            nombre.trim()
-                        )
-                        .filter(nombre =>
-                            nombre.length > 0
+                    consultarPersonal();
+
+                    if (btnCerrarConsulta) {
+
+                        btnCerrarConsulta.style.display =
+                            "inline-block";
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        // ===================================
+        // CAMBIAR DÍA
+        // ===================================
+
+        if (diaConsulta) {
+
+            diaConsulta.addEventListener(
+                "change",
+                () => {
+
+                    consultarPersonal();
+
+                }
+            );
+
+        }
+
+
+        // ===================================
+        // CAMBIAR MES
+        // ===================================
+
+        if (selectorMes) {
+
+            selectorMes.addEventListener(
+                "change",
+                () => {
+
+                    mesSeleccionado =
+                        Number(
+                            selectorMes.value
                         );
 
+                    cargarDiasConsulta();
 
-                renderTabla();
+                    cargarRangoDias();
 
-            }
-        );
+                    renderTabla();
 
-    }
+                    if (resultadoDia) {
 
+                        resultadoDia.innerHTML =
+                            "";
 
-    // ===================================
-    // CAMBIAR DESDE
-    // ===================================
+                    }
 
-    if (diaDesde) {
+                    if (btnCerrarConsulta) {
 
-        diaDesde.addEventListener(
-            "change",
-            () => {
+                        btnCerrarConsulta.style.display =
+                            "none";
 
-                const desde =
-                    Number(diaDesde.value);
-
-                const hasta =
-                    Number(diaHasta?.value);
-
-
-                if (
-                    diaHasta &&
-                    desde > hasta
-                ) {
-
-                    diaHasta.value =
-                        desde;
+                    }
 
                 }
+            );
+
+        }
 
 
-                renderTabla();
+        // ===================================
+        // BUSCAR EMPLEADO
+        // ===================================
 
-            }
-        );
+        if (buscar) {
 
-    }
+            buscar.addEventListener(
+                "input",
+                () => {
 
+                    filtroEmpleado =
+                        buscar.value
+                            .toUpperCase()
+                            .split(",")
+                            .map(
+                                nombre =>
+                                    nombre.trim()
+                            )
+                            .filter(
+                                nombre =>
+                                    nombre.length > 0
+                            );
 
-    // ===================================
-    // CAMBIAR HASTA
-    // ===================================
-
-    if (diaHasta) {
-
-        diaHasta.addEventListener(
-            "change",
-            () => {
-
-                const desde =
-                    Number(diaDesde?.value);
-
-                const hasta =
-                    Number(diaHasta.value);
-
-
-                if (
-                    diaDesde &&
-                    hasta < desde
-                ) {
-
-                    diaDesde.value =
-                        hasta;
+                    renderTabla();
 
                 }
+            );
+
+        }
 
 
-                renderTabla();
+        // ===================================
+        // CAMBIAR DESDE
+        // ===================================
 
-            }
-        );
+        if (diaDesde) {
+
+            diaDesde.addEventListener(
+                "change",
+                () => {
+
+                    const desde =
+                        Number(
+                            diaDesde.value
+                        );
+
+                    const hasta =
+                        Number(
+                            diaHasta?.value
+                        );
+
+                    if (
+                        diaHasta &&
+                        desde > hasta
+                    ) {
+
+                        diaHasta.value =
+                            String(desde);
+
+                    }
+
+                    renderTabla();
+
+                }
+            );
+
+        }
+
+
+        // ===================================
+        // CAMBIAR HASTA
+        // ===================================
+
+        if (diaHasta) {
+
+            diaHasta.addEventListener(
+                "change",
+                () => {
+
+                    const desde =
+                        Number(
+                            diaDesde?.value
+                        );
+
+                    const hasta =
+                        Number(
+                            diaHasta.value
+                        );
+
+                    if (
+                        diaDesde &&
+                        hasta < desde
+                    ) {
+
+                        diaDesde.value =
+                            String(hasta);
+
+                    }
+
+                    renderTabla();
+
+                }
+            );
+
+        }
+
+
+        // ===================================
+        // BOTÓN ACTUALIZAR
+        // ===================================
+
+        if (btnActualizar) {
+
+            btnActualizar.addEventListener(
+                "click",
+                () => {
+
+                    actualizarCuadrante();
+
+                }
+            );
+
+        }
 
     }
-
-
-    // ===================================
-    // BOTÓN ACTUALIZAR
-    // ===================================
-
-    if (btnActualizar) {
-
-        btnActualizar.addEventListener(
-            "click",
-            () => {
-
-                actualizarCuadrante();
-
-            }
-        );
-
-    }
-
-});
+);
 
 
 // =======================================
@@ -303,10 +482,14 @@ document.addEventListener("DOMContentLoaded", () => {
 function consultarPersonal() {
 
     const selectorDia =
-        document.getElementById("diaConsulta");
+        document.getElementById(
+            "diaConsulta"
+        );
 
     const resultadoDia =
-        document.getElementById("resultadoDia");
+        document.getElementById(
+            "resultadoDia"
+        );
 
 
     if (!resultadoDia) {
@@ -329,13 +512,17 @@ function consultarPersonal() {
 
 
     const diaSeleccionado =
-        Number(selectorDia?.value);
+        Number(
+            selectorDia?.value
+        );
 
 
     if (!diaSeleccionado) {
 
         resultadoDia.innerHTML = `
-            <p>No hay ningún día seleccionado.</p>
+            <p>
+                No hay ningún día seleccionado.
+            </p>
         `;
 
         return;
@@ -373,16 +560,19 @@ function consultarPersonal() {
     // ===================================
 
     const indiceDia =
-        dias.findIndex(d =>
-            d.dia === diaSeleccionado &&
-            d.mes === mesSeleccionado
+        dias.findIndex(
+            d =>
+                d.dia === diaSeleccionado &&
+                d.mes === mesSeleccionado
         );
 
 
     if (indiceDia === -1) {
 
         resultadoDia.innerHTML = `
-            <p>No hay datos para ese día.</p>
+            <p>
+                No hay datos para ese día.
+            </p>
         `;
 
         return;
@@ -394,77 +584,83 @@ function consultarPersonal() {
     // RECORRER EMPLEADOS
     // ===================================
 
-    empleados.forEach(emp => {
+    empleados.forEach(
+        emp => {
 
-        const nombre =
-            String(emp.nombre ?? "")
-                .trim();
+            const nombre =
+                String(
+                    emp.nombre ?? ""
+                ).trim();
 
 
-        // --------------------------------
-        // FILTRO POR NOMBRE
-        // --------------------------------
+            // =================================
+            // FILTRO NOMBRE
+            // =================================
 
-        if (
-            filtroEmpleado.length > 0 &&
-            !filtroEmpleado.some(nombreBuscado =>
-                nombre
-                    .toUpperCase()
-                    .includes(nombreBuscado)
-            )
-        ) {
+            if (
+                filtroEmpleado.length > 0 &&
+                !filtroEmpleado.some(
+                    nombreBuscado =>
+                        nombre
+                            .toUpperCase()
+                            .includes(
+                                nombreBuscado
+                            )
+                )
+            ) {
 
-            return;
+                return;
+
+            }
+
+
+            // =================================
+            // TURNO
+            // =================================
+
+            const turno =
+                String(
+                    emp.turnos?.[indiceDia] ?? ""
+                )
+                    .trim()
+                    .toUpperCase();
+
+
+            // =================================
+            // CLASIFICAR
+            // =================================
+
+            if (
+                turno === "M" &&
+                filtroManana
+            ) {
+
+                manana.push(nombre);
+
+            }
+
+
+            if (
+                turno === "T" &&
+                filtroTarde
+            ) {
+
+                tarde.push(nombre);
+
+            }
+
+
+            if (
+                turno === "N" &&
+                filtroNoche
+            ) {
+
+                noche.push(nombre);
+
+            }
 
         }
-
-
-        // --------------------------------
-        // TURNO
-        // --------------------------------
-
-        const turno =
-            String(
-                emp.turnos?.[indiceDia] ?? ""
-            )
-            .trim()
-            .toUpperCase();
-
-
-        // --------------------------------
-        // CLASIFICAR
-        // --------------------------------
-
-        if (
-            turno === "M" &&
-            filtroManana
-        ) {
-
-            manana.push(nombre);
-
-        }
-
-
-        if (
-            turno === "T" &&
-            filtroTarde
-        ) {
-
-            tarde.push(nombre);
-
-        }
-
-
-        if (
-            turno === "N" &&
-            filtroNoche
-        ) {
-
-            noche.push(nombre);
-
-        }
-
-    });
+    );
 
 
     // ===================================
@@ -524,7 +720,7 @@ function consultarPersonal() {
 
 
 // =======================================
-// CREAR TARJETA DE TURNO
+// CREAR TARJETA
 // =======================================
 
 function crearTarjetaTurno(
@@ -550,11 +746,14 @@ function crearTarjetaTurno(
                     empleadosTurno.length > 0
 
                     ? empleadosTurno
-                        .map(nombre => `
-                            <span class="empleado-chip">
-                                ${escapeHTML(nombre)}
-                            </span>
-                        `)
+                        .map(
+                            nombre => `
+                                <span
+                                    class="empleado-chip">
+                                    ${escapeHTML(nombre)}
+                                </span>
+                            `
+                        )
                         .join("")
 
                     : `
@@ -574,17 +773,32 @@ function crearTarjetaTurno(
 
 
 // =======================================
-// EVITAR HTML INYECTADO EN NOMBRES
+// ESCAPE HTML
 // =======================================
 
 function escapeHTML(texto) {
 
     return String(texto)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
@@ -596,18 +810,25 @@ function escapeHTML(texto) {
 function cargarDiasConsulta() {
 
     const selectorDia =
-        document.getElementById("diaConsulta");
+        document.getElementById(
+            "diaConsulta"
+        );
 
     const selectorDesde =
-        document.getElementById("diaDesde");
+        document.getElementById(
+            "diaDesde"
+        );
 
     const selectorHasta =
-        document.getElementById("diaHasta");
+        document.getElementById(
+            "diaHasta"
+        );
 
 
     const diasMes =
-        dias.filter(dia =>
-            dia.mes === mesSeleccionado
+        dias.filter(
+            dia =>
+                dia.mes === mesSeleccionado
         );
 
 
@@ -616,15 +837,24 @@ function cargarDiasConsulta() {
     // ===================================
 
     if (selectorDia) {
-        selectorDia.innerHTML = "";
+
+        selectorDia.innerHTML =
+            "";
+
     }
 
     if (selectorDesde) {
-        selectorDesde.innerHTML = "";
+
+        selectorDesde.innerHTML =
+            "";
+
     }
 
     if (selectorHasta) {
-        selectorHasta.innerHTML = "";
+
+        selectorHasta.innerHTML =
+            "";
+
     }
 
 
@@ -632,73 +862,77 @@ function cargarDiasConsulta() {
     // RELLENAR
     // ===================================
 
-    diasMes.forEach(dia => {
+    diasMes.forEach(
+        dia => {
 
-        if (selectorDia) {
+            if (selectorDia) {
 
-            const option =
-                document.createElement("option");
+                const option =
+                    document.createElement(
+                        "option"
+                    );
 
-            option.value =
-                dia.dia;
+                option.value =
+                    dia.dia;
 
-            option.textContent =
-                dia.dia;
+                option.textContent =
+                    dia.dia;
 
-            selectorDia.appendChild(
-                option
-            );
+                selectorDia.appendChild(
+                    option
+                );
+
+            }
+
+
+            if (selectorDesde) {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+                option.value =
+                    dia.dia;
+
+                option.textContent =
+                    dia.dia;
+
+                selectorDesde.appendChild(
+                    option
+                );
+
+            }
+
+
+            if (selectorHasta) {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+                option.value =
+                    dia.dia;
+
+                option.textContent =
+                    dia.dia;
+
+                selectorHasta.appendChild(
+                    option
+                );
+
+            }
 
         }
+    );
 
-
-        if (selectorDesde) {
-
-            const option =
-                document.createElement("option");
-
-            option.value =
-                dia.dia;
-
-            option.textContent =
-                dia.dia;
-
-            selectorDesde.appendChild(
-                option
-            );
-
-        }
-
-
-        if (selectorHasta) {
-
-            const option =
-                document.createElement("option");
-
-            option.value =
-                dia.dia;
-
-            option.textContent =
-                dia.dia;
-
-            selectorHasta.appendChild(
-                option
-            );
-
-        }
-
-    });
-
-
-    // ===================================
-    // DÍA ACTUAL
-    // ===================================
 
     seleccionarDiaActualODisponible();
 
 
     // ===================================
-    // RANGO COMPLETO DEL MES
+    // RANGO COMPLETO
     // ===================================
 
     if (diasMes.length > 0) {
@@ -706,14 +940,20 @@ function cargarDiasConsulta() {
         if (selectorDesde) {
 
             selectorDesde.value =
-                diasMes[0].dia;
+                String(
+                    diasMes[0].dia
+                );
 
         }
 
         if (selectorHasta) {
 
             selectorHasta.value =
-                diasMes[diasMes.length - 1].dia;
+                String(
+                    diasMes[
+                        diasMes.length - 1
+                    ].dia
+                );
 
         }
 
@@ -729,7 +969,9 @@ function cargarDiasConsulta() {
 function seleccionarDiaActualODisponible() {
 
     const selectorDia =
-        document.getElementById("diaConsulta");
+        document.getElementById(
+            "diaConsulta"
+        );
 
 
     if (
@@ -751,13 +993,25 @@ function seleccionarDiaActualODisponible() {
     const mesHoy =
         hoy.getMonth() + 1;
 
+    const anoHoy =
+        hoy.getFullYear();
 
-    if (mesSeleccionado === mesHoy) {
+
+    // Solo usar el día actual
+    // si estamos viendo el año actual
+
+    if (
+        anoSeleccionado === anoHoy &&
+        mesSeleccionado === mesHoy
+    ) {
 
         const existeHoy =
             [...selectorDia.options]
-                .some(option =>
-                    Number(option.value) === diaHoy
+                .some(
+                    option =>
+                        Number(
+                            option.value
+                        ) === diaHoy
                 );
 
 
@@ -785,10 +1039,14 @@ function seleccionarDiaActualODisponible() {
 function cargarRangoDias() {
 
     const desde =
-        document.getElementById("diaDesde");
+        document.getElementById(
+            "diaDesde"
+        );
 
     const hasta =
-        document.getElementById("diaHasta");
+        document.getElementById(
+            "diaHasta"
+        );
 
 
     if (!desde || !hasta) {
@@ -797,30 +1055,32 @@ function cargarRangoDias() {
 
 
     const diasMes =
-        dias.filter(d =>
-            d.mes === mesSeleccionado
+        dias.filter(
+            d =>
+                d.mes === mesSeleccionado
         );
 
 
     if (diasMes.length === 0) {
 
-        desde.innerHTML = "";
-        hasta.innerHTML = "";
+        desde.innerHTML =
+            "";
+
+        hasta.innerHTML =
+            "";
 
         return;
 
     }
 
 
-    // ===================================
-    // ASEGURAR VALORES
-    // ===================================
-
     const primerDia =
         diasMes[0].dia;
 
     const ultimoDia =
-        diasMes[diasMes.length - 1].dia;
+        diasMes[
+            diasMes.length - 1
+        ].dia;
 
 
     desde.value =
@@ -846,7 +1106,8 @@ function actualizarCuadrante() {
 
     if (resultado) {
 
-        resultado.innerHTML = "";
+        resultado.innerHTML =
+            "";
 
     }
 
