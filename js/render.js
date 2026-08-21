@@ -1,8 +1,8 @@
 "use strict";
 
-// =======================================
-// FILTRAR EMPLEADOS
-// =======================================
+/* =========================================================
+   FILTRAR EMPLEADOS
+   ========================================================= */
 
 function obtenerEmpleadosFiltrados() {
 
@@ -10,9 +10,9 @@ function obtenerEmpleadosFiltrados() {
         ? [...empleados]
         : [];
 
-    // =======================================
-    // FILTRO POR NOMBRE
-    // =======================================
+    /* =====================================================
+       FILTRO POR NOMBRE
+       ===================================================== */
 
     if (
         Array.isArray(filtroEmpleado) &&
@@ -22,7 +22,7 @@ function obtenerEmpleadosFiltrados() {
         resultado = resultado.filter(emp => {
 
             const nombreEmpleado =
-                String(emp.nombre ?? "")
+                String(emp?.nombre ?? "")
                     .trim()
                     .toUpperCase();
 
@@ -44,9 +44,9 @@ function obtenerEmpleadosFiltrados() {
 
     }
 
-    // =======================================
-    // CHECKS M / T / N
-    // =======================================
+    /* =====================================================
+       CHECKBOXES M / T / N
+       ===================================================== */
 
     const filtroManana =
         document.getElementById("filtroManana");
@@ -56,6 +56,11 @@ function obtenerEmpleadosFiltrados() {
 
     const filtroNoche =
         document.getElementById("filtroNoche");
+
+    /*
+       Si los filtros no existen todavía,
+       devolvemos los empleados.
+    */
 
     if (
         !filtroManana ||
@@ -74,9 +79,9 @@ function obtenerEmpleadosFiltrados() {
     const nocheActivo =
         filtroNoche.checked;
 
-    // =======================================
-    // NINGÚN TURNO SELECCIONADO
-    // =======================================
+    /* =====================================================
+       NINGÚN TURNO SELECCIONADO
+       ===================================================== */
 
     if (
         !mananaActivo &&
@@ -86,9 +91,9 @@ function obtenerEmpleadosFiltrados() {
         return [];
     }
 
-    // =======================================
-    // RANGO
-    // =======================================
+    /* =====================================================
+       RANGO DE DÍAS
+       ===================================================== */
 
     const elementoDesde =
         document.getElementById("diaDesde");
@@ -120,40 +125,53 @@ function obtenerEmpleadosFiltrados() {
         diaHasta = 31;
     }
 
-    // =======================================
-    // MES
-    // =======================================
+    /* =====================================================
+       MES
+       ===================================================== */
 
     const selectMes =
         document.getElementById("meses");
 
-    const mesActual =
-        selectMes && selectMes.value
+    let mesActual =
+        selectMes &&
+        selectMes.value !== ""
             ? Number(selectMes.value)
-            : mesSeleccionado;
+            : Number(mesSeleccionado);
+
+    if (
+        !Number.isFinite(mesActual) ||
+        mesActual < 1 ||
+        mesActual > 12
+    ) {
+        mesActual = 1;
+    }
 
     mesSeleccionado = mesActual;
 
-    // =======================================
-    // DÍAS DEL RANGO
-    // =======================================
+    /* =====================================================
+       DÍAS DEL RANGO
+       ===================================================== */
 
     const diasDelRango =
         Array.isArray(dias)
-            ? dias.filter(dia =>
-                Number(dia.mes) === mesActual &&
-                Number(dia.dia) >= diaDesde &&
-                Number(dia.dia) <= diaHasta
-            )
+            ? dias.filter(dia => {
+
+                return (
+                    Number(dia?.mes) === mesActual &&
+                    Number(dia?.dia) >= diaDesde &&
+                    Number(dia?.dia) <= diaHasta
+                );
+
+            })
             : [];
 
-    // =======================================
-    // FILTRAR EMPLEADOS
-    // =======================================
+    /* =====================================================
+       FILTRAR EMPLEADOS
+       ===================================================== */
 
     resultado = resultado.filter(emp => {
 
-        if (!Array.isArray(emp.turnos)) {
+        if (!Array.isArray(emp?.turnos)) {
             return false;
         }
 
@@ -161,6 +179,10 @@ function obtenerEmpleadosFiltrados() {
 
             const indice =
                 dias.indexOf(dia);
+
+            if (indice < 0) {
+                return false;
+            }
 
             const turno =
                 String(
@@ -200,26 +222,129 @@ function obtenerEmpleadosFiltrados() {
 }
 
 
-// =======================================
-// PINTAR TABLA COMPLETA
-// =======================================
+/* =========================================================
+   OBTENER FECHA DE UN DÍA
+   ========================================================= */
+
+function obtenerFechaDia(dia) {
+
+    if (!dia) {
+        return null;
+    }
+
+    if (dia.fecha instanceof Date) {
+
+        if (
+            isNaN(
+                dia.fecha.getTime()
+            )
+        ) {
+            return null;
+        }
+
+        return new Date(
+            dia.fecha.getFullYear(),
+            dia.fecha.getMonth(),
+            dia.fecha.getDate()
+        );
+    }
+
+    if (
+        dia.fecha !== undefined &&
+        dia.fecha !== null
+    ) {
+
+        return convertirFechaFestivo(
+            dia.fecha
+        );
+    }
+
+    /*
+       Por si el objeto dia no tiene fecha
+       pero sí día, mes y año.
+    */
+
+    const diaNumero =
+        Number(dia.dia);
+
+    const mesNumero =
+        Number(dia.mes);
+
+    const anioNumero =
+        Number(
+            dia.anio ??
+            dia.año ??
+            2026
+        );
+
+    if (
+        Number.isFinite(diaNumero) &&
+        Number.isFinite(mesNumero) &&
+        Number.isFinite(anioNumero)
+    ) {
+
+        const fecha =
+            new Date(
+                anioNumero,
+                mesNumero - 1,
+                diaNumero
+            );
+
+        if (
+            fecha.getFullYear() === anioNumero &&
+            fecha.getMonth() === mesNumero - 1 &&
+            fecha.getDate() === diaNumero
+        ) {
+            return fecha;
+        }
+    }
+
+    return null;
+}
+
+
+/* =========================================================
+   PINTAR TABLA COMPLETA
+   ========================================================= */
 
 function renderTabla() {
+
+    const thead =
+        document.getElementById("thead");
+
+    const tbody =
+        document.getElementById("tbody");
+
+    if (!thead || !tbody) {
+        return;
+    }
+
+    /* =====================================================
+       MES
+       ===================================================== */
 
     const selectMes =
         document.getElementById("meses");
 
-    const mesActual =
-        selectMes && selectMes.value
+    let mesActual =
+        selectMes &&
+        selectMes.value !== ""
             ? Number(selectMes.value)
-            : mesSeleccionado;
+            : Number(mesSeleccionado);
 
-    mesSeleccionado =
-        mesActual;
+    if (
+        !Number.isFinite(mesActual) ||
+        mesActual < 1 ||
+        mesActual > 12
+    ) {
+        mesActual = 1;
+    }
 
-    // =======================================
-    // RANGO
-    // =======================================
+    mesSeleccionado = mesActual;
+
+    /* =====================================================
+       RANGO
+       ===================================================== */
 
     const elementoDesde =
         document.getElementById("diaDesde");
@@ -251,35 +376,33 @@ function renderTabla() {
         diaHasta = 31;
     }
 
-    // =======================================
-    // DÍAS DEL MES
-    // =======================================
+    /* =====================================================
+       DÍAS DEL MES
+       ===================================================== */
 
     const diasMes =
         Array.isArray(dias)
-            ? dias.filter(d =>
-                Number(d.mes) === mesActual &&
-                Number(d.dia) >= diaDesde &&
-                Number(d.dia) <= diaHasta
-            )
+            ? dias.filter(d => {
+
+                return (
+                    Number(d?.mes) === mesActual &&
+                    Number(d?.dia) >= diaDesde &&
+                    Number(d?.dia) <= diaHasta
+                );
+
+            })
             : [];
 
-    const thead =
-        document.getElementById("thead");
-
-    const tbody =
-        document.getElementById("tbody");
-
-    if (!thead || !tbody) {
-        return;
-    }
+    /* =====================================================
+       LIMPIAR
+       ===================================================== */
 
     thead.innerHTML = "";
     tbody.innerHTML = "";
 
-    // =======================================
-    // SIN EMPLEADOS
-    // =======================================
+    /* =====================================================
+       SIN EMPLEADOS
+       ===================================================== */
 
     if (
         !Array.isArray(empleados) ||
@@ -288,27 +411,27 @@ function renderTabla() {
 
         tbody.innerHTML = `
             <tr>
-                <td>No hay datos cargados.</td>
+                <td colspan="100%">
+                    No hay datos cargados.
+                </td>
             </tr>
         `;
 
         return;
     }
 
-    // =======================================
-    // CREAR TABLA
-    // =======================================
+    /* =====================================================
+       CREAR TABLA
+       ===================================================== */
 
     crearCabecera(diasMes);
-
     crearFilas(diasMes);
-
 }
 
 
-// =======================================
-// COMPROBAR TURNO VISIBLE
-// =======================================
+/* =========================================================
+   COMPROBAR TURNO VISIBLE
+   ========================================================= */
 
 function turnoVisible(turno) {
 
@@ -346,13 +469,18 @@ function turnoVisible(turno) {
         return filtroNoche.checked;
     }
 
+    /*
+       V, L, LPA, BAJA, etc.
+       siguen siendo visibles.
+    */
+
     return true;
 }
 
 
-// =======================================
-// CONVERTIR FECHA FESTIVO
-// =======================================
+/* =========================================================
+   CONVERTIR FECHA FESTIVO
+   ========================================================= */
 
 function convertirFechaFestivo(valor) {
 
@@ -364,13 +492,17 @@ function convertirFechaFestivo(valor) {
         return null;
     }
 
-    // =======================================
-    // YA ES DATE
-    // =======================================
+    /* =====================================================
+       YA ES DATE
+       ===================================================== */
 
     if (valor instanceof Date) {
 
-        if (isNaN(valor.getTime())) {
+        if (
+            isNaN(
+                valor.getTime()
+            )
+        ) {
             return null;
         }
 
@@ -379,18 +511,18 @@ function convertirFechaFestivo(valor) {
             valor.getMonth(),
             valor.getDate()
         );
-
     }
 
-    // =======================================
-    // NÚMERO EXCEL
-    // =======================================
+    /* =====================================================
+       NÚMERO EXCEL
+       ===================================================== */
 
     if (typeof valor === "number") {
 
         if (
             typeof XLSX !== "undefined" &&
-            XLSX.SSF
+            XLSX.SSF &&
+            typeof XLSX.SSF.parse_date_code === "function"
         ) {
 
             const fechaExcel =
@@ -403,26 +535,48 @@ function convertirFechaFestivo(valor) {
                     fechaExcel.m - 1,
                     fechaExcel.d
                 );
-
             }
-
         }
 
+        /*
+           Si no está disponible XLSX,
+           intentamos convertir el número
+           como timestamp solo si parece uno.
+        */
+
+        const fechaTimestamp =
+            new Date(valor);
+
+        if (
+            !isNaN(
+                fechaTimestamp.getTime()
+            )
+        ) {
+            return new Date(
+                fechaTimestamp.getFullYear(),
+                fechaTimestamp.getMonth(),
+                fechaTimestamp.getDate()
+            );
+        }
     }
 
-    // =======================================
-    // TEXTO
-    // =======================================
+    /* =====================================================
+       TEXTO
+       ===================================================== */
 
     if (typeof valor === "string") {
 
         const texto =
             valor.trim();
 
-        // DD/MM/YYYY
+        /* =================================================
+           DD/MM/YYYY
+           DD-MM-YYYY
+           ================================================= */
+
         const partes =
             texto.match(
-                /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/
+                /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/
             );
 
         if (partes) {
@@ -450,10 +604,12 @@ function convertirFechaFestivo(valor) {
             ) {
                 return fecha;
             }
-
         }
 
-        // YYYY-MM-DD
+        /* =================================================
+           YYYY-MM-DD
+           ================================================= */
+
         const partesISO =
             texto.match(
                 /^(\d{4})-(\d{1,2})-(\d{1,2})$/
@@ -484,31 +640,36 @@ function convertirFechaFestivo(valor) {
             ) {
                 return fecha;
             }
-
         }
 
+        /*
+           Último intento con Date().
+        */
+
+        const fechaGenerica =
+            new Date(texto);
+
+        if (
+            !isNaN(
+                fechaGenerica.getTime()
+            )
+        ) {
+
+            return new Date(
+                fechaGenerica.getFullYear(),
+                fechaGenerica.getMonth(),
+                fechaGenerica.getDate()
+            );
+        }
     }
 
     return null;
 }
 
 
-// =======================================
-// COMPROBAR SI UNA FECHA ES FESTIVA
-//
-// IMPORTANTE:
-// leerFestivos() YA convierte los datos
-// de Excel en:
-//
-// {
-//   dia: 1,
-//   mes: 1,
-//   anio: 2026,
-//   fecha: Date
-// }
-//
-// Por eso aquí NO buscamos festivo[1].
-// =======================================
+/* =========================================================
+   COMPROBAR SI UNA FECHA ES FESTIVA
+   ========================================================= */
 
 function esFechaFestiva(fecha) {
 
@@ -519,19 +680,7 @@ function esFechaFestiva(fecha) {
         return false;
     }
 
-    // =======================================
-    // SOLO AÑO 2026
-    // =======================================
-
-    if (
-        fecha.getFullYear() !== 2026
-    ) {
-        return false;
-    }
-
-    if (
-        !Array.isArray(festivos)
-    ) {
+    if (!Array.isArray(festivos)) {
         return false;
     }
 
@@ -550,9 +699,15 @@ function esFechaFestiva(fecha) {
             return false;
         }
 
-        // ===================================
-        // FORMATO QUE GENERA leerFestivos()
-        // ===================================
+        /* =================================================
+           FORMATO:
+           {
+               dia: 1,
+               mes: 1,
+               anio: 2026,
+               fecha: Date
+           }
+           ================================================= */
 
         if (
             Number(festivo.dia) === dia &&
@@ -562,15 +717,18 @@ function esFechaFestiva(fecha) {
             return true;
         }
 
-        // ===================================
-        // POR SI ALGÚN FESTIVO VIENE CON FECHA
-        // ===================================
+        /* =================================================
+           POR SI VIENE SOLO LA FECHA
+           ================================================= */
+
+        const valorFecha =
+            festivo.fecha ??
+            festivo.Fecha ??
+            festivo.FECHA;
 
         const fechaFestivo =
             convertirFechaFestivo(
-                festivo.fecha ??
-                festivo.Fecha ??
-                festivo.FECHA
+                valorFecha
             );
 
         if (!fechaFestivo) {
@@ -582,41 +740,58 @@ function esFechaFestiva(fecha) {
             fechaFestivo.getMonth() + 1 === mes &&
             fechaFestivo.getDate() === dia
         );
-
     });
-
 }
-// =======================================
-// CREAR CABECERA
-// =======================================
+
+
+/* =========================================================
+   CREAR CABECERA
+   ========================================================= */
 
 function crearCabecera(diasMes) {
 
-    const thead = document.getElementById("thead");
+    const thead =
+        document.getElementById("thead");
 
     if (!thead) {
-        console.error("❌ No existe #thead");
+        console.error(
+            "❌ No existe #thead"
+        );
         return;
     }
 
-    const filaSemana = document.createElement("tr");
-    const filaDias = document.createElement("tr");
+    const filaSemana =
+        document.createElement("tr");
 
-    // =======================================
-    // PRIMERA CELDA
-    // =======================================
+    const filaDias =
+        document.createElement("tr");
 
-    const thVacio = document.createElement("th");
+    /* =====================================================
+       PRIMERA CELDA
+       ===================================================== */
+
+    const thVacio =
+        document.createElement("th");
+
     thVacio.textContent = "";
-    filaSemana.appendChild(thVacio);
 
-    const thEmpleado = document.createElement("th");
-    thEmpleado.textContent = "Empleado";
-    filaDias.appendChild(thEmpleado);
+    filaSemana.appendChild(
+        thVacio
+    );
 
-    // =======================================
-    // DÍAS DE LA SEMANA
-    // =======================================
+    const thEmpleado =
+        document.createElement("th");
+
+    thEmpleado.textContent =
+        "Empleado";
+
+    filaDias.appendChild(
+        thEmpleado
+    );
+
+    /* =====================================================
+       DÍAS DE LA SEMANA
+       ===================================================== */
 
     const diasSemana = [
         "D",
@@ -628,96 +803,99 @@ function crearCabecera(diasMes) {
         "S"
     ];
 
-    // =======================================
-    // CREAR CADA DÍA
-    // =======================================
+    /* =====================================================
+       CREAR DÍAS
+       ===================================================== */
 
     diasMes.forEach(dia => {
 
-        const fecha = dia.fecha instanceof Date
-            ? dia.fecha
-            : new Date(dia.fecha);
+        const fecha =
+            obtenerFechaDia(dia);
 
-        if (isNaN(fecha.getTime())) {
-            console.error("❌ Fecha inválida:", dia);
+        if (!fecha) {
+
+            console.error(
+                "❌ Fecha inválida:",
+                dia
+            );
+
             return;
         }
 
-        // ===================================
-        // COMPROBAR FESTIVO
-        // ===================================
-
-        const diaNumero = fecha.getDate();
-        const mesNumero = fecha.getMonth() + 1;
-        const anioNumero = fecha.getFullYear();
+        const diaNumero =
+            fecha.getDate();
 
         const esFestivo =
-            Array.isArray(festivos) &&
-            festivos.some(festivo => {
+            esFechaFestiva(fecha);
 
-                return (
-                    Number(festivo.dia) === diaNumero &&
-                    Number(festivo.mes) === mesNumero &&
-                    Number(festivo.anio) === anioNumero
-                );
+        /* ===============================================
+           DÍA SEMANA
+           =============================================== */
 
-            });
-
-        console.log(
-            "DÍA:",
-            diaNumero,
-            "/",
-            mesNumero,
-            "/",
-            anioNumero,
-            "→ FESTIVO:",
-            esFestivo
-        );
-
-        // ===================================
-        // COLUMNA DÍA DE LA SEMANA
-        // ===================================
-
-        const thSemana = document.createElement("th");
+        const thSemana =
+            document.createElement("th");
 
         thSemana.textContent =
-            diasSemana[fecha.getDay()];
+            diasSemana[
+                fecha.getDay()
+            ];
 
         if (esFestivo) {
-            thSemana.classList.add("dia-festivo");
-            thSemana.title = "DÍA FESTIVO";
+
+            thSemana.classList.add(
+                "dia-festivo"
+            );
+
+            thSemana.title =
+                "DÍA FESTIVO";
         }
 
-        filaSemana.appendChild(thSemana);
+        filaSemana.appendChild(
+            thSemana
+        );
 
-        // ===================================
-        // COLUMNA NÚMERO DEL DÍA
-        // ===================================
+        /* ===============================================
+           NÚMERO DÍA
+           =============================================== */
 
-        const thDia = document.createElement("th");
+        const thDia =
+            document.createElement("th");
 
-        thDia.textContent = diaNumero;
+        thDia.textContent =
+            diaNumero;
 
         if (esFestivo) {
-            thDia.classList.add("dia-festivo");
-            thDia.title = "DÍA FESTIVO";
+
+            thDia.classList.add(
+                "dia-festivo"
+            );
+
+            thDia.title =
+                "DÍA FESTIVO";
         }
 
-        filaDias.appendChild(thDia);
-
+        filaDias.appendChild(
+            thDia
+        );
     });
 
-    // =======================================
-    // AÑADIR CABECERA
-    // =======================================
+    /* =====================================================
+       AÑADIR
+       ===================================================== */
 
-    thead.appendChild(filaSemana);
-    thead.appendChild(filaDias);
+    thead.appendChild(
+        filaSemana
+    );
+
+    thead.appendChild(
+        filaDias
+    );
 }
 
-// =======================================
-// CREAR FILAS DE EMPLEADOS
-// =======================================
+
+/* =========================================================
+   CREAR FILAS DE EMPLEADOS
+   ========================================================= */
 
 function crearFilas(diasMes) {
 
@@ -731,38 +909,47 @@ function crearFilas(diasMes) {
     const empleadosFiltrados =
         obtenerEmpleadosFiltrados();
 
+    /* =====================================================
+       EMPLEADOS
+       ===================================================== */
+
     empleadosFiltrados.forEach(emp => {
 
         const tr =
             document.createElement("tr");
 
-        // ===================================
-        // NOMBRE
-        // ===================================
+        /* =================================================
+           NOMBRE
+           ================================================= */
 
         const tdNombre =
             document.createElement("td");
 
         tdNombre.textContent =
-            emp.nombre ?? "";
+            emp?.nombre ?? "";
 
         tr.appendChild(
             tdNombre
         );
 
-        // ===================================
-        // DÍAS
-        // ===================================
+        /* =================================================
+           DÍAS
+           ================================================= */
 
         diasMes.forEach(dia => {
 
             const indice =
                 dias.indexOf(dia);
 
-            const turno =
-                Array.isArray(emp.turnos)
-                    ? emp.turnos[indice]
-                    : "";
+            let turno = "";
+
+            if (
+                Array.isArray(emp?.turnos) &&
+                indice >= 0
+            ) {
+                turno =
+                    emp.turnos[indice] ?? "";
+            }
 
             const td =
                 document.createElement("td");
@@ -772,25 +959,23 @@ function crearFilas(diasMes) {
                     .trim()
                     .toUpperCase();
 
-            // ===================================
-            // MOSTRAR / OCULTAR TURNO
-            // ===================================
+            /* =============================================
+               MOSTRAR / OCULTAR
+               ============================================= */
 
-            if (turnoVisible(turno)) {
-
+            if (
+                turnoVisible(turno)
+            ) {
                 td.textContent =
                     turno ?? "";
-
             } else {
-
                 td.textContent =
                     "";
-
             }
 
-            // ===================================
-            // COLORES TURNOS
-            // ===================================
+            /* =============================================
+               COLORES TURNOS
+               ============================================= */
 
             switch (valor) {
 
@@ -850,23 +1035,14 @@ function crearFilas(diasMes) {
                     );
 
                     break;
-
             }
 
-            // ===================================
-            // SI ES FESTIVO
-            //
-            // NO CAMBIAMOS EL COLOR DEL TURNO.
-            // Solo añadimos una clase para poder
-            // marcar la columna.
-            // ===================================
+            /* =============================================
+               FESTIVO
+               ============================================= */
 
             const fecha =
-                dia.fecha instanceof Date
-                    ? dia.fecha
-                    : convertirFechaFestivo(
-                        dia.fecha
-                    );
+                obtenerFechaDia(dia);
 
             if (
                 fecha &&
@@ -876,32 +1052,32 @@ function crearFilas(diasMes) {
                 td.classList.add(
                     "celda-festiva"
                 );
-
             }
 
             tr.appendChild(
                 td
             );
-
         });
 
         tbody.appendChild(
             tr
         );
-
     });
+
+    /* =====================================================
+       TOTALES
+       ===================================================== */
 
     crearFilaTotales(
         diasMes,
         empleadosFiltrados
     );
-
 }
 
 
-// =======================================
-// TOTALES M / T / N
-// =======================================
+/* =========================================================
+   TOTALES M / T / N
+   ========================================================= */
 
 function crearFilaTotales(
     diasMes,
@@ -930,9 +1106,9 @@ function crearFilaTotales(
             "fila-total"
         );
 
-        // ===================================
-        // TÍTULO
-        // ===================================
+        /* =================================================
+           TÍTULO
+           ================================================= */
 
         const tdTitulo =
             document.createElement("td");
@@ -947,9 +1123,9 @@ function crearFilaTotales(
             tdTitulo
         );
 
-        // ===================================
-        // CONTAR
-        // ===================================
+        /* =================================================
+           CONTAR CADA DÍA
+           ================================================= */
 
         diasMes.forEach(dia => {
 
@@ -962,7 +1138,7 @@ function crearFilaTotales(
 
                 const turno =
                     String(
-                        emp.turnos?.[indiceDia] ?? ""
+                        emp?.turnos?.[indiceDia] ?? ""
                     )
                         .trim()
                         .toUpperCase();
@@ -970,11 +1146,8 @@ function crearFilaTotales(
                 if (
                     turno === turnoBuscado
                 ) {
-
                     contador++;
-
                 }
-
             });
 
             const td =
@@ -987,16 +1160,12 @@ function crearFilaTotales(
                 "total-" + turnoBuscado
             );
 
-            // ===================================
-            // FESTIVO EN TOTALES
-            // ===================================
+            /* =============================================
+               FESTIVO
+               ============================================= */
 
             const fecha =
-                dia.fecha instanceof Date
-                    ? dia.fecha
-                    : convertirFechaFestivo(
-                        dia.fecha
-                    );
+                obtenerFechaDia(dia);
 
             if (
                 fecha &&
@@ -1006,121 +1175,629 @@ function crearFilaTotales(
                 td.classList.add(
                     "celda-festiva-total"
                 );
-
             }
 
             tr.appendChild(
                 td
             );
-
         });
 
         tbody.appendChild(
             tr
         );
+    });
+}
+
+
+/* =========================================================
+   AVISO DE FALTA DE PERSONAL
+   ========================================================= */
+
+function comprobarFaltaPersonal() {
+
+    const aviso =
+        document.getElementById(
+            "avisoPersonal"
+        );
+
+    const contenido =
+        document.getElementById(
+            "contenidoAvisoPersonal"
+        );
+
+    if (
+        !aviso ||
+        !contenido
+    ) {
+        return;
+    }
+
+    /* =====================================================
+       REINICIAR
+       ===================================================== */
+
+    const faltas = [];
+
+    /* =====================================================
+       MES
+       ===================================================== */
+
+    const selectMes =
+        document.getElementById("meses");
+
+    let mesActual =
+        selectMes &&
+        selectMes.value !== ""
+            ? Number(selectMes.value)
+            : Number(mesSeleccionado);
+
+    if (
+        !Number.isFinite(mesActual)
+    ) {
+        mesActual = 1;
+    }
+
+    /* =====================================================
+       RANGO
+       ===================================================== */
+
+    const elementoDesde =
+        document.getElementById("diaDesde");
+
+    const elementoHasta =
+        document.getElementById("diaHasta");
+
+    let diaDesde =
+        elementoDesde
+            ? Number(elementoDesde.value)
+            : 1;
+
+    let diaHasta =
+        elementoHasta
+            ? Number(elementoHasta.value)
+            : 31;
+
+    if (
+        !Number.isFinite(diaDesde) ||
+        diaDesde < 1
+    ) {
+        diaDesde = 1;
+    }
+
+    if (
+        !Number.isFinite(diaHasta) ||
+        diaHasta < diaDesde
+    ) {
+        diaHasta = 31;
+    }
+
+    /* =====================================================
+       HOY
+       ===================================================== */
+
+    const hoy =
+        new Date();
+
+    hoy.setHours(
+        0,
+        0,
+        0,
+        0
+    );
+
+    /* =====================================================
+       DÍAS A COMPROBAR
+       SOLO HOY Y FUTURO
+       ===================================================== */
+
+    const diasComprobar =
+        Array.isArray(dias)
+            ? dias.filter(dia => {
+
+                const fecha =
+                    obtenerFechaDia(dia);
+
+                if (!fecha) {
+                    return false;
+                }
+
+                fecha.setHours(
+                    0,
+                    0,
+                    0,
+                    0
+                );
+
+                return (
+                    Number(dia?.mes) === mesActual &&
+                    Number(dia?.dia) >= diaDesde &&
+                    Number(dia?.dia) <= diaHasta &&
+                    fecha >= hoy
+                );
+
+            })
+            : [];
+
+    /* =====================================================
+       COMPROBAR CADA DÍA
+       ===================================================== */
+
+    diasComprobar.forEach(dia => {
+
+        const indiceDia =
+            dias.indexOf(dia);
+
+        if (indiceDia < 0) {
+            return;
+        }
+
+        const fecha =
+            obtenerFechaDia(dia);
+
+        if (!fecha) {
+            return;
+        }
+
+        /* =================================================
+           FIN DE SEMANA
+           ================================================= */
+
+        const diaSemana =
+            fecha.getDay();
+
+        const esFinDeSemana =
+            diaSemana === 0 ||
+            diaSemana === 6;
+
+        /* =================================================
+           MÍNIMOS
+           ================================================= */
+
+        const minimoM =
+            esFinDeSemana
+                ? 2
+                : 10;
+
+        const minimoT =
+            esFinDeSemana
+                ? 2
+                : 9;
+
+        const minimoN =
+            esFinDeSemana
+                ? 2
+                : 5;
+
+        /* =================================================
+           CONTAR
+           ================================================= */
+
+        let manana = 0;
+        let tarde = 0;
+        let noche = 0;
+
+        if (
+            Array.isArray(empleados)
+        ) {
+
+            empleados.forEach(emp => {
+
+                const turno =
+                    String(
+                        emp?.turnos?.[indiceDia] ?? ""
+                    )
+                        .trim()
+                        .toUpperCase();
+
+                if (turno === "M") {
+                    manana++;
+                }
+
+                if (turno === "T") {
+                    tarde++;
+                }
+
+                if (turno === "N") {
+                    noche++;
+                }
+
+            });
+        }
+
+        /* =================================================
+           FALTAS
+           ================================================= */
+
+        /*
+           IMPORTANTE:
+           Los 0 NO generan aviso.
+        */
+
+        if (
+            manana > 0 &&
+            manana < minimoM
+        ) {
+
+            faltas.push({
+                dia,
+                turno: "M",
+                cantidad: manana,
+                minimo: minimoM
+            });
+        }
+
+        if (
+            tarde > 0 &&
+            tarde < minimoT
+        ) {
+
+            faltas.push({
+                dia,
+                turno: "T",
+                cantidad: tarde,
+                minimo: minimoT
+            });
+        }
+
+        if (
+            noche > 0 &&
+            noche < minimoN
+        ) {
+
+            faltas.push({
+                dia,
+                turno: "N",
+                cantidad: noche,
+                minimo: minimoN
+            });
+        }
 
     });
+
+    /* =====================================================
+       SIN FALTAS
+       ===================================================== */
+if (faltas.length === 0) {
+
+    aviso.classList.remove("parpadeando");
+    aviso.classList.remove("cerrado");
+
+    aviso.dataset.aceptado = "false";
+
+    contenido.innerHTML = "";
+
+    return;
+}
+
+    /* =====================================================
+       NOMBRES
+       ===================================================== */
+
+    const nombresTurnos = {
+
+        M: "Mañana",
+
+        T: "Tarde",
+
+        N: "Noche"
+    };
+
+    const iconosTurnos = {
+
+        M: "☀️",
+
+        T: "🌇",
+
+        N: "🌙"
+    };
+
+    /* =====================================================
+       CREAR HTML
+       ===================================================== */
+
+    let html = "";
+
+    faltas.forEach(falta => {
+
+        const fecha =
+            obtenerFechaDia(
+                falta.dia
+            );
+
+        if (!fecha) {
+            return;
+        }
+
+        const diaTexto =
+            String(
+                fecha.getDate()
+            ).padStart(2, "0");
+
+        const mesTexto =
+            String(
+                fecha.getMonth() + 1
+            ).padStart(2, "0");
+
+        const diferencia =
+            falta.minimo -
+            falta.cantidad;
+
+        html += `
+            <div class="item-falta-personal">
+
+                <span class="fecha-falta">
+                    ${diaTexto}/${mesTexto}
+                </span>
+
+                <span class="turno-falta">
+                    ${iconosTurnos[falta.turno]}
+                    ${nombresTurnos[falta.turno]}
+                </span>
+
+                <span class="cantidad-falta">
+                    ${falta.cantidad}/${falta.minimo}
+                </span>
+
+                <span class="faltan-falta">
+                    faltan ${diferencia}
+                </span>
+
+            </div>
+        `;
+    });
+
+    contenido.innerHTML =
+        html;
+
+// =======================================
+// MOSTRAR AVISO
+// =======================================
+
+aviso.classList.remove("cerrado");
+
+// =======================================
+// PARPADEAR SI NO SE HA ACEPTADO
+// =======================================
+
+if (aviso.dataset.aceptado !== "true") {
+
+    aviso.classList.add("parpadeando");
+
+}
 
 }
 
 
 // =======================================
-// ACTUALIZAR TABLA
+// CREAR AVISO DE FALTA DE PERSONAL
 // =======================================
+
+function crearAvisoPersonal() {
+
+    if (document.getElementById("avisoPersonal")) {
+        return;
+    }
+
+    const aviso = document.createElement("div");
+
+    aviso.id = "avisoPersonal";
+
+    aviso.innerHTML = `
+        <!-- PESTAÑA CERRADA -->
+        <button
+            type="button"
+            id="botonAbrirAviso"
+            class="boton-abrir-aviso"
+            title="Abrir aviso"
+        >
+            ⚠️
+        </button>
+
+        <!-- VENTANA -->
+        <div class="ventana-aviso-personal">
+
+            <div class="cabecera-aviso-personal">
+
+                <span class="titulo-aviso-personal">
+                    ⚠️ Falta de personal
+                </span>
+
+                <div class="botones-aviso">
+
+                    <button
+                        type="button"
+                        id="botonAvisoPersonal"
+                        class="boton-aviso-personal"
+                    >
+                        Aceptar
+                    </button>
+
+                    <button
+                        type="button"
+                        id="botonCerrarAviso"
+                        class="boton-cerrar-aviso"
+                        title="Cerrar"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div
+                id="contenidoAvisoPersonal"
+                class="contenido-aviso-personal"
+            ></div>
+
+        </div>
+    `;
+
+    document.body.appendChild(aviso);
+
+    // =======================================
+    // ACEPTAR
+    // =======================================
+
+    const botonAceptar =
+        document.getElementById("botonAvisoPersonal");
+
+    botonAceptar.addEventListener("click", () => {
+
+        // Recordar que el usuario lo ha aceptado
+        aviso.dataset.aceptado = "true";
+
+        // PARAR PARPADEO
+        aviso.classList.remove("parpadeando");
+    });
+
+    // =======================================
+    // CERRAR
+    // =======================================
+
+    const botonCerrar =
+        document.getElementById("botonCerrarAviso");
+
+    botonCerrar.addEventListener("click", () => {
+
+        aviso.classList.add("cerrado");
+    });
+
+    // =======================================
+    // ABRIR
+    // =======================================
+
+    const botonAbrir =
+        document.getElementById("botonAbrirAviso");
+
+    botonAbrir.addEventListener("click", () => {
+
+        aviso.classList.remove("cerrado");
+    });
+}
+
+/* =========================================================
+   EVENTOS
+   ========================================================= */
+
+function inicializarEventosTabla() {
+
+    /* =====================================================
+       FILTROS M / T / N
+       ===================================================== */
+
+    const filtros = [
+        "filtroManana",
+        "filtroTarde",
+        "filtroNoche"
+    ];
+
+    filtros.forEach(id => {
+
+        const checkbox =
+            document.getElementById(id);
+
+        if (!checkbox) {
+            return;
+        }
+
+        checkbox.addEventListener(
+            "change",
+            () => {
+
+                renderTabla();
+                comprobarFaltaPersonal();
+
+            }
+        );
+    });
+
+    /* =====================================================
+       MES
+       ===================================================== */
+
+    const selectMes =
+        document.getElementById("meses");
+
+    if (selectMes) {
+
+        selectMes.addEventListener(
+            "change",
+            () => {
+
+                renderTabla();
+                comprobarFaltaPersonal();
+
+            }
+        );
+    }
+
+    /* =====================================================
+       DESDE
+       ===================================================== */
+
+    const elementoDesde =
+        document.getElementById("diaDesde");
+
+    if (elementoDesde) {
+
+        elementoDesde.addEventListener(
+            "change",
+            () => {
+
+                renderTabla();
+                comprobarFaltaPersonal();
+
+            }
+        );
+    }
+
+    /* =====================================================
+       HASTA
+       ===================================================== */
+
+    const elementoHasta =
+        document.getElementById("diaHasta");
+
+    if (elementoHasta) {
+
+        elementoHasta.addEventListener(
+            "change",
+            () => {
+
+                renderTabla();
+                comprobarFaltaPersonal();
+
+            }
+        );
+    }
+}
+
+
+/* =========================================================
+   INICIALIZACIÓN
+   ========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
     () => {
 
-        // ===================================
-        // FILTROS M / T / N
-        // ===================================
+        crearAvisoPersonal();
 
-        const filtros = [
-            "filtroManana",
-            "filtroTarde",
-            "filtroNoche"
-        ];
+        inicializarEventosTabla();
 
-        filtros.forEach(id => {
+        /*
+           Esperamos un poco por si los datos
+           empleados / dias / festivos se cargan
+           desde Excel u otro script.
+        */
 
-            const checkbox =
-                document.getElementById(id);
+        setTimeout(() => {
 
-            if (!checkbox) {
-                return;
-            }
+            renderTabla();
+            comprobarFaltaPersonal();
 
-            checkbox.addEventListener(
-                "change",
-                () => {
-
-                    renderTabla();
-
-                }
-            );
-
-        });
-
-        // ===================================
-        // CAMBIO DE MES
-        // ===================================
-
-        const selectMes =
-            document.getElementById("meses");
-
-        if (selectMes) {
-
-            selectMes.addEventListener(
-                "change",
-                () => {
-
-                    renderTabla();
-
-                }
-            );
-
-        }
-
-        // ===================================
-        // CAMBIO DESDE
-        // ===================================
-
-        const elementoDesde =
-            document.getElementById("diaDesde");
-
-        if (elementoDesde) {
-
-            elementoDesde.addEventListener(
-                "change",
-                () => {
-
-                    renderTabla();
-
-                }
-            );
-
-        }
-
-        // ===================================
-        // CAMBIO HASTA
-        // ===================================
-
-        const elementoHasta =
-            document.getElementById("diaHasta");
-
-        if (elementoHasta) {
-
-            elementoHasta.addEventListener(
-                "change",
-                () => {
-
-                    renderTabla();
-
-                }
-            );
-
-        }
+        }, 500);
 
     }
 );
