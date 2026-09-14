@@ -1372,9 +1372,8 @@ td.dia-festivo {
    ========================================== */
 
 .fecha-falta {
-
-    font-weight: bold;
-
+   min-width: 350px;
+    display: inline-block;
     white-space: nowrap;
 }
 
@@ -1445,4 +1444,114 @@ td.dia-festivo {
     50% {
         opacity: 0.35;
     }
+}
+/* =====================================================
+   AVISO DE INCIDENCIAS / RECONOCIMIENTOS
+   ===================================================== */
+
+.aviso-incidencias {
+
+    width: 100%;
+    margin: 10px 0;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+
+}
+
+
+/* =====================================================
+   CABECERA
+   ===================================================== */
+
+.titulo-aviso-incidencias {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 12px 16px;
+
+    cursor: pointer;
+
+    user-select: none;
+
+    font-weight: bold;
+
+}
+
+
+/* =====================================================
+   FLECHA
+   ===================================================== */
+
+.flecha-aviso-incidencias {
+
+    font-size: 13px;
+
+    transition:
+        transform 0.2s ease;
+
+}
+
+
+/* =====================================================
+   CONTENIDO
+   ===================================================== */
+
+.contenido-aviso-incidencias {
+
+    display: none;
+
+    padding: 0 16px 14px 16px;
+
+}
+
+
+/* =====================================================
+   CONTENIDO ABIERTO
+   ===================================================== */
+
+.contenido-aviso-incidencias.abierto {
+
+    display: block;
+
+}
+
+
+/* =====================================================
+   BLOQUES
+   ===================================================== */
+
+.bloque-incidencia {
+
+    margin-top: 10px;
+
+}
+
+
+/* =====================================================
+   TÍTULO DEL BLOQUE
+   ===================================================== */
+
+.titulo-bloque-incidencia {
+
+    font-weight: bold;
+
+    margin-bottom: 5px;
+
+}
+
+
+/* =====================================================
+   ELEMENTOS
+   ===================================================== */
+
+.item-incidencia {
+
+    padding: 4px 0;
+
 }
