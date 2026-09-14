@@ -1,4 +1,5 @@
 "use strict";
+let workbookActual = null;
 
 // =======================================
 // URL DEL EXCEL
@@ -18,11 +19,15 @@ async function cargarExcelServidor() {
         document.getElementById("anos");
 
     if (selectorAno && selectorAno.value) {
-        anoSeleccionado = Number(selectorAno.value);
+        anoSeleccionado =
+            Number(selectorAno.value);
     }
 
     console.log("=================================");
-    console.log("📅 CARGANDO AÑO:", anoSeleccionado);
+    console.log(
+        "📅 CARGANDO AÑO:",
+        anoSeleccionado
+    );
     console.log("=================================");
 
     dias = [];
@@ -31,12 +36,15 @@ async function cargarExcelServidor() {
 
     try {
 
-        const respuesta = await fetch(
-            URL_EXCEL + "?cache=" + Date.now(),
-            {
-                cache: "no-store"
-            }
-        );
+        const respuesta =
+            await fetch(
+                URL_EXCEL +
+                "?cache=" +
+                Date.now(),
+                {
+                    cache: "no-store"
+                }
+            );
 
         console.log(
             "📥 Respuesta Excel:",
@@ -44,6 +52,7 @@ async function cargarExcelServidor() {
         );
 
         if (!respuesta.ok) {
+
             throw new Error(
                 "No se pudo descargar el Excel."
             );
@@ -57,9 +66,10 @@ async function cargarExcelServidor() {
             arrayBuffer.byteLength
         );
 
-        // IMPORTANTE:
-        // raw:false permite que SheetJS genere
-        // el valor formateado "w".
+        // =======================================
+        // LEER EXCEL CON SHEETJS
+        // =======================================
+
         const workbook =
             XLSX.read(
                 arrayBuffer,
@@ -70,12 +80,34 @@ async function cargarExcelServidor() {
                 }
             );
 
+
+        // =======================================
+        // GUARDAR WORKBOOK ACTUAL
+        // =======================================
+        //
+        // Lo necesitamos para que el sistema
+        // de INCIDENCIAS pueda acceder después
+        // a la hoja "INCIDENCIAS".
+        //
+
+        workbookActual =
+            workbook;
+
+
         console.log(
             "📚 HOJAS DEL EXCEL:",
             workbook.SheetNames
         );
 
-        procesarWorkbook(workbook);
+
+        // =======================================
+        // PROCESAR EXCEL
+        // =======================================
+
+        procesarWorkbook(
+            workbook
+        );
+
 
     } catch (error) {
 
@@ -84,7 +116,9 @@ async function cargarExcelServidor() {
             error
         );
 
-        alert(error.message);
+        alert(
+            error.message
+        );
     }
 }
 
@@ -1463,6 +1497,15 @@ function actualizarSelectorMeses() {
 
             renderTabla();
 
+            if (
+    typeof comprobarIncidencias ===
+    "function"
+) {
+
+    comprobarIncidencias();
+
+}
+
 
             if (
                 typeof cargarDiasConsulta ===
@@ -1721,3 +1764,501 @@ document.addEventListener(
         );
     }
 );
+
+// =======================================
+// AVISO DE INCIDENCIAS / RECONOCIMIENTOS
+// =======================================
+
+function comprobarIncidencias() {
+
+    const aviso =
+        document.getElementById(
+            "avisoIncidencias"
+        );
+
+    const contenido =
+        document.getElementById(
+            "contenidoAvisoIncidencias"
+        );
+
+    const flecha =
+        document.getElementById(
+            "flechaAvisoIncidencias"
+        );
+
+
+    // =======================================
+    // COMPROBAR ELEMENTOS
+    // =======================================
+
+    if (
+        !aviso ||
+        !contenido
+    ) {
+        return;
+    }
+
+
+    // =======================================
+    // COMPROBAR XLSX
+    // =======================================
+
+    if (
+        typeof XLSX === "undefined"
+    ) {
+        return;
+    }
+
+
+    // =======================================
+    // COMPROBAR EXCEL
+    // =======================================
+
+    if (
+        !workbookActual
+    ) {
+        return;
+    }
+
+
+    // =======================================
+    // BUSCAR HOJA INCIDENCIAS
+    // =======================================
+
+    const hoja =
+        workbookActual.Sheets[
+            "INCIDENCIAS"
+        ];
+
+
+    if (!hoja) {
+
+        contenido.innerHTML =
+            "";
+
+        aviso.style.display =
+            "none";
+
+        return;
+    }
+
+
+    // =======================================
+    // OBTENER MES
+    // =======================================
+
+    const selectorMes =
+        document.getElementById(
+            "meses"
+        );
+
+    let mesActual;
+
+
+    if (
+        selectorMes &&
+        selectorMes.value !== ""
+    ) {
+
+        mesActual =
+            Number(
+                selectorMes.value
+            );
+
+    } else {
+
+        mesActual =
+            Number(
+                mesSeleccionado
+            );
+    }
+
+
+    // =======================================
+    // VALIDAR MES
+    // =======================================
+
+    if (
+        !Number.isFinite(
+            mesActual
+        ) ||
+        mesActual < 1 ||
+        mesActual > 12
+    ) {
+
+        mesActual = 1;
+    }
+
+
+    // =======================================
+    // COLUMNA DEL MES
+    // =======================================
+
+    const columna =
+        mesActual - 1;
+
+
+    // =======================================
+    // CONVERTIR HOJA A MATRIZ
+    // =======================================
+
+    const datos =
+        XLSX.utils.sheet_to_json(
+            hoja,
+            {
+                header: 1,
+                defval: ""
+            }
+        );
+
+
+    if (
+        !Array.isArray(datos) ||
+        datos.length === 0
+    ) {
+
+        contenido.innerHTML =
+            "";
+
+        aviso.style.display =
+            "none";
+
+        return;
+    }
+
+
+    // =======================================
+    // LEER MES
+    // =======================================
+
+    const filaMes =
+        datos[0] || [];
+
+    const nombreMes =
+        String(
+            filaMes[columna] ?? ""
+        ).trim();
+
+
+    if (!nombreMes) {
+
+        contenido.innerHTML =
+            "";
+
+        aviso.style.display =
+            "none";
+
+        return;
+    }
+
+
+    // =======================================
+    // LEER BLOQUES
+    // =======================================
+
+    const bloques = [];
+
+    let bloqueActual =
+        null;
+
+
+    for (
+        let fila = 1;
+        fila < datos.length;
+        fila++
+    ) {
+
+        const valor =
+            String(
+                datos[fila]?.[columna] ?? ""
+            ).trim();
+
+
+        // ===================================
+        // FILA VACÍA = SEPARADOR
+        // ===================================
+
+        if (!valor) {
+
+            if (
+                bloqueActual &&
+                bloqueActual.items.length > 0
+            ) {
+
+                bloques.push(
+                    bloqueActual
+                );
+            }
+
+            bloqueActual =
+                null;
+
+            continue;
+        }
+
+
+        // ===================================
+        // PRIMERA LÍNEA = TÍTULO
+        // ===================================
+
+        if (!bloqueActual) {
+
+            bloqueActual = {
+
+                titulo:
+                    valor,
+
+                items:
+                    []
+
+            };
+
+            continue;
+        }
+
+
+        // ===================================
+        // RESTO = INFORMACIÓN
+        // ===================================
+
+        bloqueActual.items.push(
+            valor
+        );
+    }
+
+
+    // =======================================
+    // ÚLTIMO BLOQUE
+    // =======================================
+
+    if (
+        bloqueActual &&
+        bloqueActual.items.length > 0
+    ) {
+
+        bloques.push(
+            bloqueActual
+        );
+    }
+
+
+    // =======================================
+    // SIN INFORMACIÓN
+    // =======================================
+
+    if (
+        bloques.length === 0
+    ) {
+
+        contenido.innerHTML =
+            "";
+
+        aviso.style.display =
+            "none";
+
+        return;
+    }
+
+
+    // =======================================
+    // CREAR CONTENIDO
+    // =======================================
+
+    let html = "";
+
+
+    bloques.forEach(
+        bloque => {
+
+            html += `
+                <div class="bloque-incidencia">
+
+                    <div class="titulo-bloque-incidencia">
+                        ${escapeHTML(
+                            bloque.titulo
+                        )}
+                    </div>
+
+                    <div class="contenido-bloque-incidencia">
+            `;
+
+
+            bloque.items.forEach(
+                item => {
+
+                    html += `
+                        <div class="item-incidencia">
+                            ${escapeHTML(
+                                item
+                            )}
+                        </div>
+                    `;
+
+                }
+            );
+
+
+            html += `
+                    </div>
+
+                </div>
+            `;
+        }
+    );
+
+
+    // =======================================
+    // MOSTRAR TODO EL CONTENIDO
+    // =======================================
+
+    contenido.innerHTML =
+        html;
+
+    aviso.style.display =
+        "";
+
+
+    // =======================================
+    // AL CAMBIAR DE MES:
+    // MANTENER EL DESPLEGABLE CERRADO
+    // =======================================
+
+    contenido.classList.remove(
+        "abierto"
+    );
+
+    aviso.classList.remove(
+        "abierto"
+    );
+
+
+    if (flecha) {
+
+        flecha.textContent =
+            "▼";
+    }
+
+}
+
+
+// =======================================
+// ESCAPAR HTML
+// =======================================
+
+function escapeHTML(
+    valor
+) {
+
+    return String(
+        valor
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+}
+// =======================================
+// ABRIR / CERRAR AVISO DE INCIDENCIAS
+// =======================================
+
+function toggleAvisoIncidencias() {
+
+    const aviso =
+        document.getElementById(
+            "avisoIncidencias"
+        );
+
+    const contenido =
+        document.getElementById(
+            "contenidoAvisoIncidencias"
+        );
+
+    const flecha =
+        document.getElementById(
+            "flechaAvisoIncidencias"
+        );
+
+
+    if (
+        !aviso ||
+        !contenido
+    ) {
+
+        return;
+    }
+
+
+    // =======================================
+    // ¿ESTÁ ABIERTO?
+    // =======================================
+
+    const estaAbierto =
+        contenido.classList.contains(
+            "abierto"
+        );
+
+
+    // =======================================
+    // CERRAR
+    // =======================================
+
+    if (estaAbierto) {
+
+        contenido.classList.remove(
+            "abierto"
+        );
+
+
+        aviso.classList.remove(
+            "abierto"
+        );
+
+
+        if (flecha) {
+
+            flecha.textContent =
+                "▼";
+        }
+
+
+        return;
+    }
+
+
+    // =======================================
+    // ABRIR
+    // =======================================
+
+    contenido.classList.add(
+        "abierto"
+    );
+
+
+    aviso.classList.add(
+        "abierto"
+    );
+
+
+    if (flecha) {
+
+        flecha.textContent =
+            "▲";
+    }
+
+}
