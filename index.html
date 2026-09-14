@@ -33,34 +33,40 @@
             </button>
 
 
+<label for="meses">Mes:</label>
 
-            <label for="meses">Mes:</label>
+<select id="meses">
+    <option value="1">Enero</option>
+    <option value="2">Febrero</option>
+    <option value="3">Marzo</option>
+    <option value="4">Abril</option>
+    <option value="5">Mayo</option>
+    <option value="6">Junio</option>
+    <option value="7">Julio</option>
+    <option value="8">Agosto</option>
+    <option value="9">Septiembre</option>
+    <option value="10">Octubre</option>
+    <option value="11">Noviembre</option>
+    <option value="12">Diciembre</option>
+</select>
 
-            <select id="meses">
-                <option value="1">Enero</option>
-                <option value="2">Febrero</option>
-                <option value="3">Marzo</option>
-                <option value="4">Abril</option>
-                <option value="5">Mayo</option>
-                <option value="6">Junio</option>
-                <option value="7">Julio</option>
-                <option value="8">Agosto</option>
-                <option value="9">Septiembre</option>
-                <option value="10">Octubre</option>
-                <option value="11">Noviembre</option>
-                <option value="12">Diciembre</option>
-            </select>
+<label for="anos">Año:</label>
 
-            <label for="buscar">Buscar:</label>
+<select id="anos"></select>
 
-            <input
-                type="text"
-                id="buscar"
-                placeholder="Empleado o varios separados por coma...">
+<label for="buscar">Buscar:</label>
+
+<input
+    type="text"
+    id="buscar"
+    placeholder="Empleado o varios separados por coma...">
+
 
 <label for="diaConsulta">Día:</label>
 
 <select id="diaConsulta"></select>
+
+
 <div class="rango-filtro">
 
     <label for="diaDesde">Desde:</label>
@@ -97,14 +103,62 @@
 
     <div id="mensajeActualizacion"></div>
 
+<!-- =====================================================
+     AVISO DE INCIDENCIAS / RECONOCIMIENTOS
+     ===================================================== -->
+
+<div
+    id="avisoIncidencias"
+    class="aviso-incidencias">
+
+    <div class="ventana-aviso-incidencias">
+
+        <!-- CABECERA -->
+
+        <div
+            class="cabecera-aviso-incidencias"
+            onclick="toggleAvisoIncidencias()">
+
+            <div class="titulo-aviso-incidencias">
+
+                📢 INFORMACIÓN DEL MES
+
+            </div>
+
+            <div
+                id="flechaAvisoIncidencias"
+                class="flecha-aviso-incidencias">
+
+                ▼
+
+            </div>
+
+        </div>
+
+
+        <!-- CONTENIDO -->
+
+        <div
+            id="contenidoAvisoIncidencias"
+            class="contenido-aviso-incidencias">
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =====================================================
+     AVISO DE INCIDENCIAS / RECONOCIMIENTOS
+     ===================================================== -->
+
+
+
+
+
     <div id="resultadoDia"></div>
 
 
-<button
-    id="btnCerrarConsulta"
-    class="btn-cerrar-consulta">
-    ✖ Cerrar consulta
-</button>
 
 <div class="filtros-cuadrante">
 
