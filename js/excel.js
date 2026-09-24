@@ -1783,11 +1783,6 @@ function comprobarIncidencias() {
 
     console.log("🚨 COMPROBAR INCIDENCIAS EJECUTADA");
 
-
-    // =======================================
-    // ELEMENTOS HTML
-    // =======================================
-
     const aviso =
         document.getElementById("avisoIncidencias");
 
@@ -1798,10 +1793,14 @@ function comprobarIncidencias() {
         document.getElementById("flechaAvisoIncidencias");
 
 
+    // =======================================
+    // COMPROBAR HTML
+    // =======================================
+
     if (!aviso || !contenido) {
 
         console.warn(
-            "⚠️ No se encontraron los elementos del aviso"
+            "❌ No existe avisoIncidencias o contenidoAvisoIncidencias"
         );
 
         return;
@@ -1814,8 +1813,8 @@ function comprobarIncidencias() {
 
     if (typeof XLSX === "undefined") {
 
-        console.warn(
-            "⚠️ XLSX no está cargado"
+        console.error(
+            "❌ XLSX NO está cargado"
         );
 
         return;
@@ -1829,10 +1828,9 @@ function comprobarIncidencias() {
     if (!workbookActual) {
 
         console.warn(
-            "⚠️ workbookActual todavía no está cargado"
+            "❌ workbookActual todavía no está cargado"
         );
 
-        contenido.innerHTML = "";
         aviso.style.display = "none";
 
         return;
@@ -1846,17 +1844,32 @@ function comprobarIncidencias() {
 
 
     // =======================================
-    // BUSCAR HOJA INCIDENCIAS
+    // BUSCAR INCIDENCIAS
     // =======================================
 
-    const hoja =
-        workbookActual.Sheets["INCIDENCIAS"];
+    let nombreHoja = null;
+
+    for (
+        const nombre of workbookActual.SheetNames
+    ) {
+
+        if (
+            String(nombre)
+                .trim()
+                .toUpperCase() === "INCIDENCIAS"
+        ) {
+
+            nombreHoja = nombre;
+
+            break;
+        }
+    }
 
 
-    if (!hoja) {
+    if (!nombreHoja) {
 
-        console.warn(
-            "❌ No existe la hoja INCIDENCIAS"
+        console.error(
+            "❌ NO EXISTE LA HOJA INCIDENCIAS"
         );
 
         contenido.innerHTML = "";
@@ -1866,13 +1879,18 @@ function comprobarIncidencias() {
     }
 
 
+    const hoja =
+        workbookActual.Sheets[nombreHoja];
+
+
     console.log(
-        "✅ HOJA INCIDENCIAS ENCONTRADA"
+        "✅ HOJA INCIDENCIAS ENCONTRADA:",
+        nombreHoja
     );
 
 
     // =======================================
-    // CONVERTIR EXCEL A MATRIZ
+    // CONVERTIR HOJA A MATRIZ
     // =======================================
 
     const datos =
@@ -1887,10 +1905,14 @@ function comprobarIncidencias() {
 
 
     console.log(
-        "📢 DATOS INCIDENCIAS:",
+        "📢 HOJA INCIDENCIAS COMPLETA:",
         datos
     );
 
+
+    // =======================================
+    // COMPROBAR DATOS
+    // =======================================
 
     if (
         !Array.isArray(datos) ||
@@ -1898,7 +1920,7 @@ function comprobarIncidencias() {
     ) {
 
         console.warn(
-            "⚠️ La hoja INCIDENCIAS está vacía"
+            "⚠️ INCIDENCIAS está vacía"
         );
 
         contenido.innerHTML = "";
@@ -1909,7 +1931,7 @@ function comprobarIncidencias() {
 
 
     // =======================================
-    // OBTENER MES ACTUAL
+    // OBTENER MES SELECCIONADO
     // =======================================
 
     const selectorMes =
@@ -1944,10 +1966,11 @@ function comprobarIncidencias() {
 
 
     // =======================================
-    // NOMBRES DE LOS MESES
+    // NOMBRES DE MESES
     // =======================================
 
     const nombresMeses = [
+
         "enero",
         "febrero",
         "marzo",
@@ -1960,6 +1983,7 @@ function comprobarIncidencias() {
         "octubre",
         "noviembre",
         "diciembre"
+
     ];
 
 
@@ -1968,14 +1992,31 @@ function comprobarIncidencias() {
 
 
     console.log(
-        "📅 MES ACTUAL:",
-        mesActual,
+        "📅 MES SELECCIONADO:",
         nombreMesBuscado
     );
 
 
     // =======================================
-    // BUSCAR LA FILA QUE CONTIENE LOS MESES
+    // NORMALIZAR TEXTO
+    // =======================================
+
+    function normalizarTexto(valor) {
+
+        return String(valor ?? "")
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(
+                /[\u0300-\u036f]/g,
+                ""
+            );
+
+    }
+
+
+    // =======================================
+    // BUSCAR EL MES EN TODA LA HOJA
     // =======================================
 
     let filaMeses = -1;
@@ -1984,7 +2025,7 @@ function comprobarIncidencias() {
 
     for (
         let fila = 0;
-        fila < Math.min(datos.length, 10);
+        fila < datos.length;
         fila++
     ) {
 
@@ -1999,15 +2040,8 @@ function comprobarIncidencias() {
         ) {
 
             const valor =
-                String(
-                    filaActual[col] ?? ""
-                )
-                .trim()
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(
-                    /[\u0300-\u036f]/g,
-                    ""
+                normalizarTexto(
+                    filaActual[col]
                 );
 
 
@@ -2031,11 +2065,16 @@ function comprobarIncidencias() {
 
 
     // =======================================
-    // RESULTADO DE LA BÚSQUEDA
+    // MOSTRAR RESULTADO
     // =======================================
 
     console.log(
-        "📢 FILA DE MESES ENCONTRADA:",
+        "📢 MES BUSCADO:",
+        nombreMesBuscado
+    );
+
+    console.log(
+        "📢 FILA ENCONTRADA:",
         filaMeses
     );
 
@@ -2045,14 +2084,10 @@ function comprobarIncidencias() {
     );
 
 
-    // =======================================
-    // NO SE ENCONTRÓ EL MES
-    // =======================================
-
     if (columna === -1) {
 
         console.warn(
-            "❌ NO SE ENCONTRÓ EL MES:",
+            "❌ NO SE ENCONTRÓ:",
             nombreMesBuscado
         );
 
@@ -2066,13 +2101,13 @@ function comprobarIncidencias() {
     console.log(
         "✅ MES ENCONTRADO:",
         nombreMesBuscado,
-        "COLUMNA:",
+        "→ COLUMNA:",
         XLSX.utils.encode_col(columna)
     );
 
 
     // =======================================
-    // LEER INCIDENCIAS
+    // LEER LOS DATOS DEL MES
     // =======================================
 
     const bloques = [];
@@ -2112,7 +2147,7 @@ function comprobarIncidencias() {
 
 
         // ===================================
-        // PRIMER TEXTO = TÍTULO
+        // NUEVO BLOQUE
         // ===================================
 
         if (!bloqueActual) {
@@ -2126,10 +2161,6 @@ function comprobarIncidencias() {
             };
 
         } else {
-
-            // ===================================
-            // SIGUIENTES LÍNEAS = INFORMACIÓN
-            // ===================================
 
             bloqueActual.items.push(
                 valor
@@ -2151,19 +2182,19 @@ function comprobarIncidencias() {
 
 
     console.log(
-        "📢 BLOQUES ENCONTRADOS:",
+        "📢 BLOQUES:",
         bloques
     );
 
 
     // =======================================
-    // SIN INFORMACIÓN
+    // SI NO HAY INFORMACIÓN
     // =======================================
 
     if (bloques.length === 0) {
 
         console.log(
-            "ℹ️ No hay incidencias para",
+            "ℹ️ No hay información para",
             nombreMesBuscado
         );
 
@@ -2188,9 +2219,7 @@ function comprobarIncidencias() {
                 <div class="bloque-incidencia">
 
                     <div class="titulo-bloque-incidencia">
-                        ${escapeHTML(
-                            bloque.titulo
-                        )}
+                        ${escapeHTML(bloque.titulo)}
                     </div>
             `;
 
@@ -2209,9 +2238,7 @@ function comprobarIncidencias() {
 
                         html += `
                             <div class="item-incidencia">
-                                ${escapeHTML(
-                                    item
-                                )}
+                                ${escapeHTML(item)}
                             </div>
                         `;
 
@@ -2233,7 +2260,7 @@ function comprobarIncidencias() {
 
 
     // =======================================
-    // MOSTRAR AVISO
+    // MOSTRAR
     // =======================================
 
     contenido.innerHTML =
@@ -2244,7 +2271,7 @@ function comprobarIncidencias() {
 
 
     // =======================================
-    // CERRAR DESPLEGABLE
+    // CERRADO INICIALMENTE
     // =======================================
 
     contenido.classList.remove(
@@ -2267,7 +2294,6 @@ function comprobarIncidencias() {
         "✅ INCIDENCIAS MOSTRADAS:",
         nombreMesBuscado
     );
-
 }
 
 
