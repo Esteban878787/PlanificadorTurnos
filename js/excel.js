@@ -464,17 +464,27 @@ function procesarWorkbook(workbook) {
     );
 
 
-    // ===================================
-    // PINTAR
-    // ===================================
+// =======================================
+// PINTAR
+// =======================================
 
-    renderTabla();
+renderTabla();
 
+// =======================================
+// COMPROBAR INCIDENCIAS
+// =======================================
 
-    if (
-        typeof cargarDiasConsulta ===
-        "function"
-    ) {
+if (
+    typeof comprobarIncidencias ===
+    "function"
+) {
+    comprobarIncidencias();
+}
+
+if (
+    typeof cargarDiasConsulta ===
+    "function"
+) {
 
         cargarDiasConsulta();
     }
@@ -1771,30 +1781,29 @@ document.addEventListener(
 
 function comprobarIncidencias() {
 
+    console.log("🚨 COMPROBAR INCIDENCIAS EJECUTADA");
+
+
+    // =======================================
+    // ELEMENTOS HTML
+    // =======================================
+
     const aviso =
-        document.getElementById(
-            "avisoIncidencias"
-        );
+        document.getElementById("avisoIncidencias");
 
     const contenido =
-        document.getElementById(
-            "contenidoAvisoIncidencias"
-        );
+        document.getElementById("contenidoAvisoIncidencias");
 
     const flecha =
-        document.getElementById(
-            "flechaAvisoIncidencias"
+        document.getElementById("flechaAvisoIncidencias");
+
+
+    if (!aviso || !contenido) {
+
+        console.warn(
+            "⚠️ No se encontraron los elementos del aviso"
         );
 
-
-    // =======================================
-    // COMPROBAR ELEMENTOS
-    // =======================================
-
-    if (
-        !aviso ||
-        !contenido
-    ) {
         return;
     }
 
@@ -1803,9 +1812,12 @@ function comprobarIncidencias() {
     // COMPROBAR XLSX
     // =======================================
 
-    if (
-        typeof XLSX === "undefined"
-    ) {
+    if (typeof XLSX === "undefined") {
+
+        console.warn(
+            "⚠️ XLSX no está cargado"
+        );
+
         return;
     }
 
@@ -1814,11 +1826,23 @@ function comprobarIncidencias() {
     // COMPROBAR EXCEL
     // =======================================
 
-    if (
-        !workbookActual
-    ) {
+    if (!workbookActual) {
+
+        console.warn(
+            "⚠️ workbookActual todavía no está cargado"
+        );
+
+        contenido.innerHTML = "";
+        aviso.style.display = "none";
+
         return;
     }
+
+
+    console.log(
+        "📚 HOJAS DEL EXCEL:",
+        workbookActual.SheetNames
+    );
 
 
     // =======================================
@@ -1826,31 +1850,70 @@ function comprobarIncidencias() {
     // =======================================
 
     const hoja =
-        workbookActual.Sheets[
-            "INCIDENCIAS"
-        ];
+        workbookActual.Sheets["INCIDENCIAS"];
 
 
     if (!hoja) {
 
-        contenido.innerHTML =
-            "";
+        console.warn(
+            "❌ No existe la hoja INCIDENCIAS"
+        );
 
-        aviso.style.display =
-            "none";
+        contenido.innerHTML = "";
+        aviso.style.display = "none";
+
+        return;
+    }
+
+
+    console.log(
+        "✅ HOJA INCIDENCIAS ENCONTRADA"
+    );
+
+
+    // =======================================
+    // CONVERTIR EXCEL A MATRIZ
+    // =======================================
+
+    const datos =
+        XLSX.utils.sheet_to_json(
+            hoja,
+            {
+                header: 1,
+                defval: "",
+                raw: false
+            }
+        );
+
+
+    console.log(
+        "📢 DATOS INCIDENCIAS:",
+        datos
+    );
+
+
+    if (
+        !Array.isArray(datos) ||
+        datos.length === 0
+    ) {
+
+        console.warn(
+            "⚠️ La hoja INCIDENCIAS está vacía"
+        );
+
+        contenido.innerHTML = "";
+        aviso.style.display = "none";
 
         return;
     }
 
 
     // =======================================
-    // OBTENER MES
+    // OBTENER MES ACTUAL
     // =======================================
 
     const selectorMes =
-        document.getElementById(
-            "meses"
-        );
+        document.getElementById("meses");
 
     let mesActual;
 
@@ -1861,27 +1924,17 @@ function comprobarIncidencias() {
     ) {
 
         mesActual =
-            Number(
-                selectorMes.value
-            );
+            Number(selectorMes.value);
 
     } else {
 
         mesActual =
-            Number(
-                mesSeleccionado
-            );
+            Number(mesSeleccionado);
     }
 
 
-    // =======================================
-    // VALIDAR MES
-    // =======================================
-
     if (
-        !Number.isFinite(
-            mesActual
-        ) ||
+        !Number.isFinite(mesActual) ||
         mesActual < 1 ||
         mesActual > 12
     ) {
@@ -1891,79 +1944,144 @@ function comprobarIncidencias() {
 
 
     // =======================================
-    // COLUMNA DEL MES
+    // NOMBRES DE LOS MESES
     // =======================================
 
-    const columna =
-        mesActual - 1;
+    const nombresMeses = [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre"
+    ];
+
+
+    const nombreMesBuscado =
+        nombresMeses[mesActual - 1];
+
+
+    console.log(
+        "📅 MES ACTUAL:",
+        mesActual,
+        nombreMesBuscado
+    );
 
 
     // =======================================
-    // CONVERTIR HOJA A MATRIZ
+    // BUSCAR LA FILA QUE CONTIENE LOS MESES
     // =======================================
 
-    const datos =
-        XLSX.utils.sheet_to_json(
-            hoja,
-            {
-                header: 1,
-                defval: ""
-            }
-        );
+    let filaMeses = -1;
+    let columna = -1;
 
 
-    if (
-        !Array.isArray(datos) ||
-        datos.length === 0
+    for (
+        let fila = 0;
+        fila < Math.min(datos.length, 10);
+        fila++
     ) {
 
-        contenido.innerHTML =
-            "";
+        const filaActual =
+            datos[fila] || [];
 
-        aviso.style.display =
-            "none";
+
+        for (
+            let col = 0;
+            col < filaActual.length;
+            col++
+        ) {
+
+            const valor =
+                String(
+                    filaActual[col] ?? ""
+                )
+                .trim()
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(
+                    /[\u0300-\u036f]/g,
+                    ""
+                );
+
+
+            if (
+                valor ===
+                nombreMesBuscado
+            ) {
+
+                filaMeses = fila;
+                columna = col;
+
+                break;
+            }
+        }
+
+
+        if (columna !== -1) {
+            break;
+        }
+    }
+
+
+    // =======================================
+    // RESULTADO DE LA BÚSQUEDA
+    // =======================================
+
+    console.log(
+        "📢 FILA DE MESES ENCONTRADA:",
+        filaMeses
+    );
+
+    console.log(
+        "📢 COLUMNA ENCONTRADA:",
+        columna
+    );
+
+
+    // =======================================
+    // NO SE ENCONTRÓ EL MES
+    // =======================================
+
+    if (columna === -1) {
+
+        console.warn(
+            "❌ NO SE ENCONTRÓ EL MES:",
+            nombreMesBuscado
+        );
+
+        contenido.innerHTML = "";
+        aviso.style.display = "none";
 
         return;
     }
 
 
-    // =======================================
-    // LEER MES
-    // =======================================
-
-    const filaMes =
-        datos[0] || [];
-
-    const nombreMes =
-        String(
-            filaMes[columna] ?? ""
-        ).trim();
-
-
-    if (!nombreMes) {
-
-        contenido.innerHTML =
-            "";
-
-        aviso.style.display =
-            "none";
-
-        return;
-    }
+    console.log(
+        "✅ MES ENCONTRADO:",
+        nombreMesBuscado,
+        "COLUMNA:",
+        XLSX.utils.encode_col(columna)
+    );
 
 
     // =======================================
-    // LEER BLOQUES
+    // LEER INCIDENCIAS
     // =======================================
 
     const bloques = [];
 
-    let bloqueActual =
-        null;
+    let bloqueActual = null;
 
 
     for (
-        let fila = 1;
+        let fila = filaMeses + 1;
         fila < datos.length;
         fila++
     ) {
@@ -1975,66 +2093,56 @@ function comprobarIncidencias() {
 
 
         // ===================================
-        // FILA VACÍA = SEPARADOR
+        // FILA VACÍA
         // ===================================
 
-        if (!valor) {
+        if (valor === "") {
 
-            if (
-                bloqueActual &&
-                bloqueActual.items.length > 0
-            ) {
+            if (bloqueActual) {
 
                 bloques.push(
                     bloqueActual
                 );
-            }
 
-            bloqueActual =
-                null;
+                bloqueActual = null;
+            }
 
             continue;
         }
 
 
         // ===================================
-        // PRIMERA LÍNEA = TÍTULO
+        // PRIMER TEXTO = TÍTULO
         // ===================================
 
         if (!bloqueActual) {
 
             bloqueActual = {
 
-                titulo:
-                    valor,
+                titulo: valor,
 
-                items:
-                    []
+                items: []
 
             };
 
-            continue;
+        } else {
+
+            // ===================================
+            // SIGUIENTES LÍNEAS = INFORMACIÓN
+            // ===================================
+
+            bloqueActual.items.push(
+                valor
+            );
         }
-
-
-        // ===================================
-        // RESTO = INFORMACIÓN
-        // ===================================
-
-        bloqueActual.items.push(
-            valor
-        );
     }
 
 
     // =======================================
-    // ÚLTIMO BLOQUE
+    // GUARDAR ÚLTIMO BLOQUE
     // =======================================
 
-    if (
-        bloqueActual &&
-        bloqueActual.items.length > 0
-    ) {
+    if (bloqueActual) {
 
         bloques.push(
             bloqueActual
@@ -2042,26 +2150,32 @@ function comprobarIncidencias() {
     }
 
 
+    console.log(
+        "📢 BLOQUES ENCONTRADOS:",
+        bloques
+    );
+
+
     // =======================================
     // SIN INFORMACIÓN
     // =======================================
 
-    if (
-        bloques.length === 0
-    ) {
+    if (bloques.length === 0) {
 
-        contenido.innerHTML =
-            "";
+        console.log(
+            "ℹ️ No hay incidencias para",
+            nombreMesBuscado
+        );
 
-        aviso.style.display =
-            "none";
+        contenido.innerHTML = "";
+        aviso.style.display = "none";
 
         return;
     }
 
 
     // =======================================
-    // CREAR CONTENIDO
+    // CREAR HTML
     // =======================================
 
     let html = "";
@@ -2078,29 +2192,40 @@ function comprobarIncidencias() {
                             bloque.titulo
                         )}
                     </div>
-
-                    <div class="contenido-bloque-incidencia">
             `;
 
 
-            bloque.items.forEach(
-                item => {
+            if (
+                bloque.items.length > 0
+            ) {
 
-                    html += `
-                        <div class="item-incidencia">
-                            ${escapeHTML(
-                                item
-                            )}
-                        </div>
-                    `;
+                html += `
+                    <div class="contenido-bloque-incidencia">
+                `;
 
-                }
-            );
+
+                bloque.items.forEach(
+                    item => {
+
+                        html += `
+                            <div class="item-incidencia">
+                                ${escapeHTML(
+                                    item
+                                )}
+                            </div>
+                        `;
+
+                    }
+                );
+
+
+                html += `
+                    </div>
+                `;
+            }
 
 
             html += `
-                    </div>
-
                 </div>
             `;
         }
@@ -2108,7 +2233,7 @@ function comprobarIncidencias() {
 
 
     // =======================================
-    // MOSTRAR TODO EL CONTENIDO
+    // MOSTRAR AVISO
     // =======================================
 
     contenido.innerHTML =
@@ -2119,8 +2244,7 @@ function comprobarIncidencias() {
 
 
     // =======================================
-    // AL CAMBIAR DE MES:
-    // MANTENER EL DESPLEGABLE CERRADO
+    // CERRAR DESPLEGABLE
     // =======================================
 
     contenido.classList.remove(
@@ -2137,6 +2261,12 @@ function comprobarIncidencias() {
         flecha.textContent =
             "▼";
     }
+
+
+    console.log(
+        "✅ INCIDENCIAS MOSTRADAS:",
+        nombreMesBuscado
+    );
 
 }
 
